@@ -109,6 +109,18 @@
   color: var(--on-desk-muted);
 }
 
+/* Masked rather than an <img>: logo.svg is filled with currentColor, which an
+   <img> cannot inherit. A mask tints the mark to any token colour and still
+   lets the browser cache one file. */
+.brandMark {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  background: var(--on-desk);
+  mask: url('/logo.svg') center / contain no-repeat;
+  -webkit-mask: url('/logo.svg') center / contain no-repeat;
+}
+
 .close {
   margin-left: auto;
   padding: 0.2rem 0.45rem;

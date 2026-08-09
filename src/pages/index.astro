@@ -1,200 +1,27 @@
 ---
+import Board from '../app/Board';
 import Base from '../layouts/Base.astro';
-
-const steps = [
-  { n: 'Click', d: 'anywhere on the desk' },
-  { n: 'Paste', d: 'the thing you need to keep' },
-  { n: 'Leave', d: 'it saved itself' },
-];
 ---
 
 <Base
-  title="pastespot — a local-only spot to paste and keep things"
-  description="Click an empty spot, paste, leave. No account, no server, no sync. Everything stays in your browser."
+  title="pastespot"
+  description="A local-only spot to paste and keep the small things. Click an empty spot, paste, leave. Nothing is uploaded."
 >
-  <main>
-    <header class="hero">
-      <p class="eyebrow">pastespot</p>
-      <h1>
-        A spot to paste the things
-        you'd otherwise <em>lose</em>.
-      </h1>
-      <p class="lede">
-        A code, a tracking number, a line you'll need in ten minutes. Click an empty
-        spot on the desk, paste, and close the tab. It never leaves your browser.
-      </p>
-      <a class="cta" href="/app">Open the desk</a>
-      <p class="meta">No account. No server. Nothing to set up.</p>
-    </header>
-
-    <section class="steps" aria-label="How it works">
-      {
-        steps.map((step) => (
-          <div class="step">
-            <span class="stepName">{step.n}</span>
-            <span class="stepDesc">{step.d}</span>
-          </div>
-        ))
-      }
-    </section>
-
-    <section class="points">
-      <article>
-        <h2>What you paste types itself</h2>
-        <p>
-          A number lands as large monospace, because the reason it exists is to be
-          read back later. A link lands as a link. A sentence lands as prose. You
-          never pick a format.
-        </p>
-      </article>
-      <article>
-        <h2>Nothing is uploaded</h2>
-        <p>
-          There is no account, no server, and no sync. Everything is written to your
-          browser's own storage. That is not a setting you have to find — it is the
-          only thing the app can do.
-        </p>
-      </article>
-      <article>
-        <h2>Position is memory</h2>
-        <p>
-          Slips stay where you dropped them, so you can find things by remembering
-          roughly where you put them. Searching dims the rest instead of rearranging
-          the desk.
-        </p>
-      </article>
-    </section>
-
-    <footer class="foot">
-      <span>pastespot</span>
-      <span>Everything stays on your device.</span>
-    </footer>
-  </main>
+  <!--
+    client:only because the board reads IndexedDB before it can render anything
+    real, and IndexedDB does not exist on the server. Server-rendering it would
+    paint an empty desk and then visibly pop in the actual slips.
+  -->
+  <Board client:only="react" />
 </Base>
 
-<style>
-  main {
-    max-width: 62rem;
-    margin: 0 auto;
-    padding: 0 clamp(1.25rem, 5vw, 3rem);
-  }
-
-  .hero {
-    padding: clamp(4rem, 12vw, 9rem) 0 clamp(2.5rem, 6vw, 4rem);
-  }
-
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--page-faint);
-  }
-
-  h1 {
-    max-width: 16ch;
-    margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
-    font-family: var(--font-display);
-    font-size: var(--step-4);
-    line-height: 1.02;
-    letter-spacing: -0.018em;
-  }
-
-  h1 em {
-    font-style: italic;
-    color: var(--page-accent);
-  }
-
-  .lede {
-    max-width: 46ch;
-    margin: 1.5rem 0 0;
-    font-family: var(--font-display);
-    font-size: var(--step-2);
-    line-height: 1.45;
-    color: var(--page-muted);
-  }
-
-  .cta {
-    display: inline-block;
-    margin-top: clamp(2rem, 4vw, 3rem);
-    padding: 0.7rem 1.4rem;
-    border-radius: var(--radius-ui);
-    background: var(--page-accent);
-    color: var(--page-on-accent);
-    font-size: var(--step--1);
-    letter-spacing: 0.02em;
-    text-decoration: none;
-  }
-
-  .cta:hover {
-    opacity: 0.9;
-  }
-
-  .meta {
-    margin-top: 0.85rem;
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    color: var(--page-faint);
-  }
-
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1px;
-    border: 1px solid var(--page-rule);
-    background: var(--page-rule);
-  }
-
-  .step {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    padding: 1.1rem 1.25rem;
-    background: var(--page-ground);
-  }
-
-  .stepName {
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--page-accent);
-  }
-
-  .stepDesc {
-    font-size: var(--step--1);
-    color: var(--page-muted);
-  }
-
-  .points {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: clamp(2rem, 5vw, 3.5rem);
-    padding: clamp(3.5rem, 9vw, 6rem) 0;
-  }
-
-  .points h2 {
-    font-family: var(--font-display);
-    font-size: var(--step-1);
-    letter-spacing: -0.01em;
-  }
-
-  .points p {
-    margin-top: 0.7rem;
-    font-size: var(--step--1);
-    line-height: 1.65;
-    color: var(--page-muted);
-  }
-
-  .foot {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 1.5rem 0 3rem;
-    border-top: 1px solid var(--page-rule);
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    color: var(--page-faint);
+<style is:global>
+  /* Match the default desk tone so there is no flash before hydration. */
+  html,
+  body {
+    height: 100%;
+    background: #0e1411;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 </style>

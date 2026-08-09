@@ -15,7 +15,8 @@ No account, no server, no sync — it stays on your machine.
 
 You have a six-digit code on screen and nowhere to put it. Every note app wants you
 to pick a notebook, name a note, and press save first. pastespot wants two actions:
-click, paste.
+click, paste. There is no marketing page in front of it — opening the site opens
+the desk.
 
 What you paste types itself. A number renders as large monospace because the reason
 it exists is to be read back. A URL renders as a link. A sentence renders as prose.
@@ -52,23 +53,13 @@ npm test         # node's built-in runner, no framework
 
 | | |
 | --- | --- |
-| **Astro 7** | static pages ship zero JavaScript, so the landing page is instant and indexable |
-| **React 19** | one island on `/app`, hydrated `client:only` because the desk reads IndexedDB first |
+| **Astro 7** | zero-config static build; there is one route and it is the app |
+| **React 19** | one island on `/`, hydrated `client:only` because the desk reads IndexedDB first |
 | **zustand** | a single small store |
 | **IndexedDB** | the entire backend, via `idb-keyval` |
 | **Plain CSS** | tokens in `src/styles/tokens.css`; the paper look is too bespoke for a utility framework |
 
 There is no server, no API route, and no telemetry.
-
-## Documentation
-
-| Document | Contents |
-| --- | --- |
-| [`docs/PLAN.md`](./docs/PLAN.md) | phases, success test, what is out of scope |
-| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | data model, storage, why Astro |
-| [`docs/DESIGN.md`](./docs/DESIGN.md) | tokens, desk tones, slip anatomy |
-| [`docs/COMMITS.md`](./docs/COMMITS.md) | commit format and scopes |
-| [`docs/EXTENSION.md`](./docs/EXTENSION.md) | the planned browser extension |
 
 ## Privacy
 

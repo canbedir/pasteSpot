@@ -130,43 +130,16 @@
 }
 
 /* ==========================================================================
-   Static pages
+   Document fallback
 
-   The landing page is a lit room, not a dark desk. It follows the visitor's
-   system preference; the board does not, because the board is furniture.
+   The board covers the viewport and paints its own ground from the desk tone,
+   so these show only in the moment before hydration. There is no light variant
+   and no system-preference switch: pastespot is a dark desk, always. A light
+   theme would be a desk tone, not a page theme.
    ========================================================================== */
 
 :root {
-  --page-ground: #f2f3f1;
-  --page-surface: #fff;
-  --page-ink: #131714;
-  --page-muted: #676e69;
-  --page-faint: #949b95;
-  --page-rule: #dce0db;
-  --page-accent: #1b4d3e;
-  --page-on-accent: #f2f3f1;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --page-ground: #0d100e;
-    --page-surface: #151a17;
-    --page-ink: #e6eae7;
-    --page-muted: #98a09a;
-    --page-faint: #6c746e;
-    --page-rule: #232a25;
-    --page-accent: #74d3ab;
-    --page-on-accent: #0d100e;
-  }
-}
-
-:root[data-theme='dark'] {
   --page-ground: #0d100e;
-  --page-surface: #151a17;
   --page-ink: #e6eae7;
-  --page-muted: #98a09a;
-  --page-faint: #6c746e;
-  --page-rule: #232a25;
   --page-accent: #74d3ab;
-  --page-on-accent: #0d100e;
 }
