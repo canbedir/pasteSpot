@@ -75,7 +75,7 @@ The kind is derived from the body text on every render (see `detect.ts`), never 
 
 | Kind | Matches | Paper | Type |
 | --- | --- | --- | --- |
-| `code` | digit-led strings ≤ 44 chars — codes, IBANs, phones, ISBNs | cool grey | mono, large, tabular figures |
+| `code` | ≤ 44 chars, has a digit, no lower case — codes, IBANs, phones, ISBNs, `ORDER-99312` | cool grey | mono, large, tabular figures |
 | `link` | `http(s)://…` or `www.…` | warm cream | host bold, path muted |
 | `text` | everything else | cream | serif, generous leading |
 

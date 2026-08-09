@@ -3,22 +3,34 @@ import type { SlipKind } from './types';
 /** A bare URL, with or without a scheme. Must be the whole string. */
 const LINK = /^(https?:\/\/|www\.)\S+$/i;
 
-/**
- * Digit-led strings: codes, IBANs, phone numbers, ISBNs, order references.
- * Letters are allowed after the first character so "TR33 0006..." and
- * "2026-0884" both match, but the string has to start with a digit — otherwise
- * ordinary sentences beginning with a word would be typeset as codes.
- */
-const CODE = /^[0-9][0-9a-z\s\-/.]*$/i;
-
 /** Long enough for an IBAN with spaces, short enough to exclude prose. */
 const CODE_MAX_LENGTH = 44;
+
+/**
+ * A code is short, contains a digit, and has no lower-case letters.
+ *
+ * That covers the cases this product exists for — 146704, 8712-4460,
+ * TR33 0006 1005 1978, ORDER-99312, 9789750736070 — while keeping ordinary
+ * writing out, because prose almost always carries lower-case letters.
+ *
+ * Comparing against the upper-cased string rather than testing a Latin
+ * character class keeps this working for non-Latin scripts too.
+ *
+ * The known trade-off: a short shouty phrase containing a number, like
+ * "MEETING AT 3", is typeset as a code. Rare enough to accept, and the slip is
+ * still perfectly readable when it happens.
+ */
+function isCode(text: string): boolean {
+  if (text.length > CODE_MAX_LENGTH) return false;
+  if (!/\d/.test(text)) return false;
+  return text === text.toUpperCase();
+}
 
 export function detectKind(body: string): SlipKind {
   const text = body.trim();
   if (!text) return 'text';
   if (LINK.test(text)) return 'link';
-  if (text.length <= CODE_MAX_LENGTH && CODE.test(text)) return 'code';
+  if (isCode(text)) return 'code';
   return 'text';
 }
 
