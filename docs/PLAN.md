@@ -14,13 +14,13 @@ three seconds, on first visit, without reading anything.
 The smallest thing that is genuinely useful.
 
 - [x] Astro + React island scaffold
-- [ ] Design tokens: desk tones, surfaces, typography
-- [ ] IndexedDB store with debounced writes and a flush on tab close
-- [ ] Board: click empty space to create a slip, edit in place, autosave
-- [ ] Slips: torn edges, grain, deterministic rotation, paperclips
-- [ ] Content typing: code / link / text
-- [ ] Copy button on each slip
-- [ ] Landing page with real SEO metadata
+- [x] Design tokens: desk tones, surfaces, typography
+- [x] IndexedDB store with debounced writes and a flush on tab close
+- [x] Board: click empty space to create a slip, edit in place, autosave
+- [x] Slips: torn edges, grain, deterministic rotation, paperclips
+- [x] Content typing: code / link / text
+- [x] Copy button on each slip
+- [x] Landing page with real SEO metadata
 
 Done when someone can use it daily and lose nothing.
 
@@ -28,13 +28,15 @@ Done when someone can use it daily and lose nothing.
 
 The things that only hurt after a few weeks of real use.
 
-- [ ] Pages with bottom tabs and staggered switching
-- [ ] Auto-open a new page when the desk fills
-- [ ] ⌘K search across all pages, dim-in-place instead of a result list
+- [x] Pages with bottom tabs and staggered switching
+- [x] Auto-open a new page when the desk fills
+- [x] ⌘K search across all pages, dim-in-place instead of a result list
+- [x] Delete a slip
+- [x] Settings: desk tone and surface texture
+- [ ] Settings: typography, and a reset to defaults
 - [ ] Drag a slip to reposition
-- [ ] Delete a slip
-- [ ] Settings: desk tone, surface texture, typography
-- [ ] Keyboard: new slip, next/previous page, close palette
+- [ ] Rename and delete a page
+- [ ] Keyboard: new slip, next/previous page, jump between slips
 
 ## Phase 3 — trust
 
