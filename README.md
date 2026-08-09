@@ -28,14 +28,14 @@ Early. Phase 1 is in progress — see [`docs/PLAN.md`](./docs/PLAN.md).
 
 ## Running it
 
-Requires Node 22.12 or newer.
+Requires [bun](https://bun.sh) 1.2 or newer.
 
 ```bash
-npm install
-npm run dev      # http://localhost:4321
-npm run build    # static output in dist/
-npm run check    # type check
-npm test         # node's built-in runner, no framework
+bun install
+bun run dev      # http://localhost:4321
+bun run build    # static output in dist/
+bun run check    # type check
+bun test         # bun's built-in runner, no framework
 ```
 
 ## Shortcuts

@@ -5,6 +5,10 @@ dist/
 
 # dependencies
 node_modules/
+# bun is the package manager here; a stray npm/yarn/pnpm lockfile would compete
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # logs
 npm-debug.log*
