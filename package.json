@@ -1,0 +1,27 @@
+{
+  "name": "pastespot",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local-only spot to paste and keep the small things. Nothing leaves your device.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^6.0.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "astro": "^7.2.0",
+    "idb-keyval": "^6.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zustand": "^5.0.14"
+  }
+}
