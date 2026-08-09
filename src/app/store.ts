@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { loadSnapshot, queueSave } from './db';
+import { loadSnapshot, queueSave, SCHEMA_VERSION } from './db';
 import {
   DEFAULT_SETTINGS,
   type DeskSurface,
@@ -7,7 +7,6 @@ import {
   type Page,
   type Settings,
   type Slip,
-  type Snapshot,
 } from './types';
 
 /** How many slips make a desk feel full enough to open the next page. */
@@ -58,10 +57,13 @@ export const useDesk = create<DeskState>((set, get) => ({
   load: async () => {
     const snapshot = await loadSnapshot();
     const pages = snapshot.pages.length ? snapshot.pages : [makePage(0)];
+    const known = new Set(pages.map((page) => page.id));
     set({
       ready: true,
       pages,
-      slips: snapshot.slips,
+      // Defensive: drop blanks written by an older build, and orphans whose
+      // page no longer exists, so neither can haunt the desk invisibly.
+      slips: snapshot.slips.filter((slip) => isRealSlip(slip) && known.has(slip.pageId)),
       settings: snapshot.settings,
       activePageId: pages[0]!.id,
     });
@@ -143,27 +145,34 @@ export const matchCountOnPage = (state: DeskState, pageId: string): number => {
 /* persistence                                                                */
 /* -------------------------------------------------------------------------- */
 
-let lastPersisted: Snapshot | null = null;
+/** Last persisted source references, so an unrelated change does not trigger a write. */
+let lastSources: Pick<DeskState, 'pages' | 'slips' | 'settings'> | null = null;
+
+/** A slip that was never typed into is a misclick, not data. */
+const isRealSlip = (slip: Slip): boolean => slip.body.trim() !== '';
 
 useDesk.subscribe((state) => {
   if (!state.ready) return;
-  const snapshot: Snapshot = {
-    version: 1,
-    pages: state.pages,
-    slips: state.slips,
-    settings: state.settings,
-  };
+
   // Query and active page are session state, not saved state.
   if (
-    lastPersisted &&
-    lastPersisted.pages === snapshot.pages &&
-    lastPersisted.slips === snapshot.slips &&
-    lastPersisted.settings === snapshot.settings
+    lastSources &&
+    lastSources.pages === state.pages &&
+    lastSources.slips === state.slips &&
+    lastSources.settings === state.settings
   ) {
     return;
   }
-  lastPersisted = snapshot;
-  queueSave(snapshot);
+  lastSources = { pages: state.pages, slips: state.slips, settings: state.settings };
+
+  queueSave({
+    version: SCHEMA_VERSION,
+    pages: state.pages,
+    // Filtered on the way out so closing the tab on an untouched slip does not
+    // resurrect a blank one on the next visit.
+    slips: state.slips.filter(isRealSlip),
+    settings: state.settings,
+  });
 });
 
 export type { DeskState, DeskSurface, DeskTone };

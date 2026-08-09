@@ -1,0 +1,28 @@
+---
+import Board from '../app/Board';
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="pastespot"
+  description="Your desk. Click an empty spot and paste."
+  noindex
+>
+  <!--
+    client:only because the board reads IndexedDB before it can render anything
+    real, and IndexedDB does not exist on the server. Server-rendering it would
+    paint an empty desk and then visibly pop in the actual slips.
+  -->
+  <Board client:only="react" />
+</Base>
+
+<style is:global>
+  /* Match the default desk tone so there is no flash before hydration. */
+  html,
+  body {
+    height: 100%;
+    background: #0e1411;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+</style>

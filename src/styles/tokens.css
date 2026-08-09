@@ -85,6 +85,7 @@
   --desk-bounce: rgb(255 214 150 / 5%);
   --accent: #6fd1a8;
   --accent-ink: #0e1411;
+  --accent-strong: #2a6b51;
   --contour-rgb: 198 255 226;
 }
 
@@ -94,6 +95,7 @@
   --desk-bounce: rgb(120 180 255 / 5%);
   --accent: #d8b070;
   --accent-ink: #17130e;
+  --accent-strong: #8a6520;
   --contour-rgb: 255 226 186;
 }
 
@@ -103,6 +105,7 @@
   --desk-bounce: rgb(255 196 140 / 4.5%);
   --accent: #8fb6ff;
   --accent-ink: #0d111a;
+  --accent-strong: #2f4d8c;
   --contour-rgb: 200 222 255;
 }
 
@@ -112,6 +115,7 @@
   --desk-bounce: rgb(150 190 235 / 4.5%);
   --accent: #c9ced6;
   --accent-ink: #141618;
+  --accent-strong: #454b52;
   --contour-rgb: 236 241 246;
 }
 
@@ -121,6 +125,7 @@
   --desk-bounce: rgb(255 190 170 / 5%);
   --accent: #c3a0ee;
   --accent-ink: #14101a;
+  --accent-strong: #6a4a8f;
   --contour-rgb: 232 208 255;
 }
 

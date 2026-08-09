@@ -1,0 +1,218 @@
+.board {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--desk);
+  cursor: text;
+  transition: background 0.4s ease;
+}
+
+/* Surface 1 — a pool of light from above, with a cool bounce below. */
+.board::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(90% 62% at 50% -8%, var(--desk-glow), transparent 72%),
+    radial-gradient(60% 45% at 88% 108%, var(--desk-bounce), transparent 70%);
+  transition: opacity 0.35s ease;
+}
+
+.board[data-surface='pool']::before {
+  opacity: 1;
+}
+
+/* Film grain over every surface. This is what keeps the desk from reading flat. */
+.board::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: var(--grain);
+  background-size: 140px 140px;
+  opacity: var(--desk-grain-opacity);
+  mix-blend-mode: soft-light;
+}
+
+/* Surface 2 — contour lines, drawn to a canvas. */
+.contour {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.board[data-surface='contour'] .contour {
+  opacity: 1;
+}
+
+/* ---- pages ------------------------------------------------------------- */
+
+.track {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--dur-slide) var(--ease-settle);
+}
+
+.page {
+  position: relative;
+  flex: 0 0 100%;
+  height: 100%;
+}
+
+/* ---- chrome ------------------------------------------------------------ */
+
+.hint {
+  position: absolute;
+  z-index: 4;
+  top: clamp(1rem, 3vw, 1.75rem);
+  left: clamp(1rem, 3vw, 2rem);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--on-desk-faint);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.hintHidden {
+  opacity: 0;
+}
+
+.corner {
+  position: absolute;
+  z-index: 5;
+  top: clamp(0.75rem, 2.5vw, 1.25rem);
+  right: clamp(0.75rem, 2.5vw, 1.25rem);
+  display: flex;
+  gap: 0.4rem;
+}
+
+.cornerButton {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--on-desk-line);
+  border-radius: var(--radius-ui);
+  background: var(--on-desk-fill);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  color: var(--on-desk-muted);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.cornerButton:hover {
+  color: var(--on-desk);
+  border-color: var(--on-desk-muted);
+}
+
+/* ---- tabs -------------------------------------------------------------- */
+
+/* Folder dividers: the active one is pulled forward, the rest sit back. */
+.tabs {
+  position: absolute;
+  z-index: 5;
+  bottom: 0;
+  left: 50%;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  max-width: 92%;
+  overflow-x: auto;
+  transform: translateX(-50%);
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 0 0 auto;
+  padding: 0.42rem 0.85rem 0.55rem;
+  border: 1px solid var(--on-desk-line);
+  border-bottom: 0;
+  border-radius: var(--radius-tab);
+  background: var(--on-desk-fill);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--on-desk-muted);
+  transform: translateY(7px);
+  transition:
+    transform 0.26s var(--ease-settle),
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.tab:hover {
+  transform: translateY(3px);
+  color: var(--on-desk);
+}
+
+.tab[aria-current='true'] {
+  border-color: transparent;
+  background: var(--paper-text);
+  color: var(--ink);
+  transform: translateY(0);
+  box-shadow: 0 -2px 14px rgb(0 0 0 / 40%);
+}
+
+.tabAdd {
+  padding-inline: 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+/* Count of search matches sitting on a page the user is not looking at. */
+.badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.5625rem;
+}
+
+.empty {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  color: var(--on-desk-muted);
+}
+
+.emptyHint {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--on-desk-faint);
+}
