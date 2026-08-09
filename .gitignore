@@ -23,7 +23,8 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# agent briefings and tooling - local only, the shared docs live in docs/
+# agent briefings, tooling, and working notes - local only
 CLAUDE.md
 AGENTS.md
 .claude/
+docs/
