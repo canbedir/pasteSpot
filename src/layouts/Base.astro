@@ -8,6 +8,8 @@ interface Props {
 
 const { title, description } = Astro.props;
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+// Crawlers need an absolute URL here; a relative one is silently ignored.
+const ogImage = Astro.site ? new URL('/og-image.png', Astro.site).href : undefined;
 ---
 
 <!doctype html>
@@ -25,14 +27,22 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {canonical && <meta property="og:url" content={canonical} />}
+    {
+      ogImage && (
+        <>
+          <meta property="og:image" content={ogImage} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content="pastespot" />
+        </>
+      )
+    }
     <meta name="twitter:card" content="summary_large_image" />
 
     <!--
-      The mark is monochrome on transparency, so a bare version vanishes on a
-      tab strip that matches its colour. These carry the desk's own ground.
-      The SVG wins wherever it is supported and stays sharp at any size; the
-      PNGs are optically bolder cuts for the sizes where a thin ribbon breaks
-      down. favicon.ico is the supplied file, kept only as a legacy fallback.
+      The bold cut of the mark throughout: the ribbon is thin, and at 16px the
+      normal weight falls under a pixel. favicon.svg carries its own
+      prefers-color-scheme rule, so it flips with the browser theme on its own.
     -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />

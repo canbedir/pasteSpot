@@ -82,8 +82,13 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
     >
       <div className={styles.panel}>
         <div className={styles.head}>
-          <span className={styles.brandMark} aria-hidden="true" />
-          <span className={styles.title}>pastespot</span>
+          <img
+            className={styles.lockup}
+            src="/lockup-white.svg"
+            alt="pastespot"
+            width="114"
+            height="22"
+          />
           <button type="button" className={styles.close} onClick={onClose}>
             esc
           </button>

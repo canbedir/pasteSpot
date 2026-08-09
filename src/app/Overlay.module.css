@@ -109,16 +109,13 @@
   color: var(--on-desk-muted);
 }
 
-/* Masked rather than an <img>: logo.svg is filled with currentColor, which an
-   <img> cannot inherit. A mask tints the mark to any token colour and still
-   lets the browser cache one file. */
-.brandMark {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  background: var(--on-desk);
-  mask: url('/logo.svg') center / contain no-repeat;
-  -webkit-mask: url('/logo.svg') center / contain no-repeat;
+/* The locked lockup: mark and wordmark are one file, so their spacing and
+   proportion cannot drift. The white cut is used because every desk tone is
+   dark. Its aspect ratio is 921:177, hence the width. */
+.lockup {
+  display: block;
+  width: 114px;
+  height: 22px;
 }
 
 .close {

@@ -26,9 +26,11 @@ function precacheServiceWorker() {
     path.startsWith('_astro/') ||
     path.startsWith('fonts/') ||
     path.startsWith('icons/') ||
-    /^favicon(-\d+)?\.(png|svg)$/.test(path) ||
-    path === 'logo.svg' ||
+    /^favicon(-\d+)?\.(png|svg|ico)$/.test(path) ||
+    /^(logo|logo-white|lockup-white)\.svg$/.test(path) ||
     path === 'site.webmanifest';
+  // og-image*.png is deliberately absent: it is fetched by crawlers, never by
+  // the app, so precaching it would cost a megabyte for nothing.
 
   /**
    * @param {URL} dir
