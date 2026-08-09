@@ -43,3 +43,18 @@ export const DEFAULT_SETTINGS: Settings = {
   tone: 'moss',
   surface: 'pool',
 };
+
+/**
+ * Where a slip's top-left corner may sit, in percent. The right and bottom
+ * limits leave room for the slip's own width and for the tab strip, so a slip
+ * can never be dropped somewhere it cannot be read or reached.
+ */
+export const SLIP_BOUNDS = { minX: 2, maxX: 64, minY: 5, maxY: 72 } as const;
+
+export function clampToDesk(x: number, y: number): { x: number; y: number } {
+  const { minX, maxX, minY, maxY } = SLIP_BOUNDS;
+  return {
+    x: Math.min(maxX, Math.max(minX, x)),
+    y: Math.min(maxY, Math.max(minY, y)),
+  };
+}

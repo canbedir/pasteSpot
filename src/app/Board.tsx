@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import CommandPalette from './CommandPalette';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
+import { findFreeSpot } from './placement';
 import {
   matchCountOnPage,
   matchesQuery,
@@ -10,13 +11,8 @@ import {
   useDesk,
 } from './store';
 import { drawContour, grainTile } from './textures';
+import { clampToDesk } from './types';
 import styles from './Board.module.css';
-
-/** Keep a new slip clear of the tab strip and the top chrome. */
-const MIN_X = 2;
-const MAX_X = 64;
-const MIN_Y = 5;
-const MAX_Y = 72;
 
 export default function Board() {
   const state = useDesk();
@@ -30,8 +26,12 @@ export default function Board() {
     addSlip,
     addPage,
     updateSlip,
+    moveSlip,
     removeSlip,
+    removePage,
+    renamePage,
     setActivePage,
+    stepPage,
   } = state;
 
   const contourRef = useRef<HTMLCanvasElement>(null);
@@ -40,6 +40,7 @@ export default function Board() {
   const [settling, setSettling] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   useEffect(() => {
     void load();
@@ -70,14 +71,52 @@ export default function Board() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+      const mod = event.metaKey || event.ctrlKey;
+      if (!mod) return;
+
+      if (event.key === 'k') {
         event.preventDefault();
         setPaletteOpen((open) => !open);
+        return;
+      }
+      // [ and ] rather than arrows: the browser owns Alt+Arrow for history.
+      if (event.key === '[') {
+        event.preventDefault();
+        stepPage(-1);
+      } else if (event.key === ']') {
+        event.preventDefault();
+        stepPage(1);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [stepPage]);
+
+  /**
+   * Paste with nothing focused and the slip makes itself. This is the product's
+   * whole gesture with the click removed, so it is worth a global handler.
+   */
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest('input, textarea')) return;
+
+      const text = event.clipboardData?.getData('text/plain')?.trim();
+      if (!text) return;
+      event.preventDefault();
+
+      const current = useDesk.getState();
+      if (slipsOnPage(current, current.activePageId).length >= PAGE_CAPACITY) {
+        addPage();
+      }
+      const after = useDesk.getState();
+      const spot = findFreeSpot(slipsOnPage(after, after.activePageId));
+      addSlip(spot.x, spot.y, text);
+    };
+
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, [addSlip, addPage]);
 
   const activeIndex = Math.max(
     0,
@@ -100,14 +139,16 @@ export default function Board() {
     if (event.target !== event.currentTarget) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = clamp(((event.clientX - rect.left) / rect.width) * 100, MIN_X, MAX_X);
-    const y = clamp(((event.clientY - rect.top) / rect.height) * 100, MIN_Y, MAX_Y);
+    const spot = clampToDesk(
+      ((event.clientX - rect.left) / rect.width) * 100,
+      ((event.clientY - rect.top) / rect.height) * 100,
+    );
 
     // A full desk opens the next page rather than stacking slips on top of each other.
     if (slipsOnPage(state, activePageId).length >= PAGE_CAPACITY) {
       addPage();
     }
-    setFocusId(addSlip(x, y));
+    setFocusId(addSlip(spot.x, spot.y));
   };
 
   if (!ready) {
@@ -141,7 +182,7 @@ export default function Board() {
         style={{ transform: `translateX(${-activeIndex * 100}%)` }}
       >
         {pages.map((page) => (
-          <div key={page.id} className={styles.page} onClick={handlePageClick}>
+          <div key={page.id} className={styles.page} data-page onClick={handlePageClick}>
             {slipsOnPage(state, page.id).map((slip, index) => (
               <Slip
                 key={slip.id}
@@ -153,6 +194,7 @@ export default function Board() {
                 autoFocus={slip.id === focusId}
                 onChange={updateSlip}
                 onRemove={removeSlip}
+                onMove={moveSlip}
               />
             ))}
           </div>
@@ -179,19 +221,60 @@ export default function Board() {
       <div className={styles.tabs}>
         {pages.map((page) => {
           const matches = matchCountOnPage(state, page.id);
+          const isActive = page.id === activePageId;
+
+          if (renamingId === page.id) {
+            return (
+              <input
+                key={page.id}
+                className={`${styles.tab} ${styles.tabInput}`}
+                defaultValue={page.name}
+                autoFocus
+                aria-label="Page name"
+                onBlur={(event) => {
+                  renamePage(page.id, event.target.value);
+                  setRenamingId(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') event.currentTarget.blur();
+                  if (event.key === 'Escape') setRenamingId(null);
+                }}
+              />
+            );
+          }
+
           return (
-            <button
-              key={page.id}
-              type="button"
-              className={styles.tab}
-              aria-current={page.id === activePageId}
-              onClick={() => goToPage(page.id)}
-            >
-              {page.name}
-              {page.id !== activePageId && matches > 0 && (
-                <span className={styles.badge}>{matches}</span>
+            <span key={page.id} className={styles.tabWrap}>
+              <button
+                type="button"
+                className={styles.tab}
+                aria-current={isActive}
+                onClick={() => goToPage(page.id)}
+                onDoubleClick={() => isActive && setRenamingId(page.id)}
+                title={isActive ? 'Double-click to rename' : undefined}
+              >
+                {page.name}
+                {!isActive && matches > 0 && <span className={styles.badge}>{matches}</span>}
+              </button>
+              {isActive && pages.length > 1 && (
+                <button
+                  type="button"
+                  className={styles.tabClose}
+                  aria-label={`Delete page ${page.name}`}
+                  onClick={() => {
+                    const count = slipsOnPage(state, page.id).length;
+                    const ok =
+                      count === 0 ||
+                      window.confirm(
+                        `Delete "${page.name}" and its ${count} slip${count === 1 ? '' : 's'}? This cannot be undone.`,
+                      );
+                    if (ok) removePage(page.id);
+                  }}
+                >
+                  ×
+                </button>
               )}
-            </button>
+            </span>
           );
         })}
         <button
@@ -208,8 +291,4 @@ export default function Board() {
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
   );
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

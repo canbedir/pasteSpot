@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { detectKind, formatStamp, splitLink } from './detect';
 import { restAngle, tornEdge } from './textures';
-import type { Slip as SlipModel, SlipKind } from './types';
+import { clampToDesk, type Slip as SlipModel, type SlipKind } from './types';
 import styles from './Slip.module.css';
 
 interface SlipProps {
@@ -13,6 +13,7 @@ interface SlipProps {
   autoFocus: boolean;
   onChange: (id: string, body: string) => void;
   onRemove: (id: string) => void;
+  onMove: (id: string, x: number, y: number) => void;
 }
 
 /**
@@ -50,9 +51,11 @@ export default function Slip({
   autoFocus,
   onChange,
   onRemove,
+  onMove,
 }: SlipProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const kind = detectKind(slip.body);
 
   useLayoutEffect(() => {
@@ -97,6 +100,47 @@ export default function Slip({
     }
   };
 
+  /**
+   * Dragging is bound to the foot, not the paper, so grabbing a slip can never
+   * be confused with selecting the text inside it.
+   */
+  const handleDragStart = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
+    const page = event.currentTarget.closest('[data-page]') as HTMLElement | null;
+    if (!page) return;
+
+    event.preventDefault();
+    const rect = page.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const originX = slip.x;
+    const originY = slip.y;
+
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    setDragging(true);
+
+    const onPointerMove = (move: PointerEvent) => {
+      const next = clampToDesk(
+        originX + ((move.clientX - startX) / rect.width) * 100,
+        originY + ((move.clientY - startY) / rect.height) * 100,
+      );
+      onMove(slip.id, next.x, next.y);
+    };
+
+    const onPointerUp = () => {
+      setDragging(false);
+      handle.releasePointerCapture(event.pointerId);
+      handle.removeEventListener('pointermove', onPointerMove);
+      handle.removeEventListener('pointerup', onPointerUp);
+      handle.removeEventListener('pointercancel', onPointerUp);
+    };
+
+    handle.addEventListener('pointermove', onPointerMove);
+    handle.addEventListener('pointerup', onPointerUp);
+    handle.addEventListener('pointercancel', onPointerUp);
+  };
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(slip.body);
@@ -109,7 +153,9 @@ export default function Slip({
   const className = [
     styles.slip,
     dimmed ? styles.dimmed : '',
-    settleDelay !== null ? styles.settling : '',
+    dragging ? styles.dragging : '',
+    // A settling slip must not also be mid-drag, or the two transforms fight.
+    settleDelay !== null && !dragging ? styles.settling : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -145,7 +191,13 @@ export default function Slip({
           onKeyDown={handleKeyDown}
         />
         <div className={styles.foot}>
-          <span>{formatStamp(slip.updatedAt)}</span>
+          <span
+            className={styles.handle}
+            onPointerDown={handleDragStart}
+            title="Drag to move"
+          >
+            {formatStamp(slip.updatedAt)}
+          </span>
           <button type="button" className={styles.action} onClick={handleCopy}>
             {copied ? 'copied' : 'copy'}
           </button>

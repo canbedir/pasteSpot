@@ -13,6 +13,17 @@
   z-index: 3;
 }
 
+/* No easing while dragging, or the paper lags behind the pointer. */
+.dragging {
+  z-index: 4;
+  transition: none;
+  cursor: grabbing;
+}
+
+.dragging .paper {
+  filter: var(--slip-shadow-lift);
+}
+
 /* Dimmed by a search. It stays exactly where it is — moving it would destroy
    the spatial memory that makes the desk worth using. */
 .dimmed {
@@ -124,6 +135,17 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+/* The drag grip. Bound to the foot so it cannot fight text selection. */
+.handle {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.handle:active {
+  cursor: grabbing;
 }
 
 .action {

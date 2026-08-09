@@ -21,13 +21,15 @@ interface DeskState {
   query: string;
 
   load: () => Promise<void>;
-  addSlip: (x: number, y: number) => string;
+  addSlip: (x: number, y: number, body?: string) => string;
   updateSlip: (id: string, body: string) => void;
   moveSlip: (id: string, x: number, y: number) => void;
   removeSlip: (id: string) => void;
   addPage: (name?: string) => string;
   renamePage: (id: string, name: string) => void;
+  removePage: (id: string) => void;
   setActivePage: (id: string) => void;
+  stepPage: (delta: number) => void;
   setQuery: (query: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
 }
@@ -69,13 +71,13 @@ export const useDesk = create<DeskState>((set, get) => ({
     });
   },
 
-  addSlip: (x, y) => {
+  addSlip: (x, y, body = '') => {
     const id = newId();
     const now = Date.now();
     set((state) => ({
       slips: [
         ...state.slips,
-        { id, pageId: state.activePageId, body: '', x, y, createdAt: now, updatedAt: now },
+        { id, pageId: state.activePageId, body, x, y, createdAt: now, updatedAt: now },
       ],
     }));
     return id;
@@ -106,10 +108,42 @@ export const useDesk = create<DeskState>((set, get) => ({
 
   renamePage: (id, name) =>
     set((state) => ({
-      pages: state.pages.map((page) => (page.id === id ? { ...page, name } : page)),
+      pages: state.pages.map((page) =>
+        page.id === id ? { ...page, name: name.trim() || page.name } : page,
+      ),
     })),
 
+  removePage: (id) =>
+    set((state) => {
+      // Never leave the desk with no page at all; there would be nowhere to click.
+      if (state.pages.length <= 1) return state;
+
+      const index = state.pages.findIndex((page) => page.id === id);
+      const pages = state.pages
+        .filter((page) => page.id !== id)
+        .map((page, order) => ({ ...page, order }));
+      const nextActive =
+        state.activePageId === id
+          ? pages[Math.min(index, pages.length - 1)]!.id
+          : state.activePageId;
+
+      return {
+        pages,
+        slips: state.slips.filter((slip) => slip.pageId !== id),
+        activePageId: nextActive,
+      };
+    }),
+
   setActivePage: (id) => set({ activePageId: id }),
+
+  stepPage: (delta) =>
+    set((state) => {
+      const index = state.pages.findIndex((page) => page.id === state.activePageId);
+      if (index === -1) return state;
+      const next = index + delta;
+      if (next < 0 || next >= state.pages.length) return state;
+      return { activePageId: state.pages[next]!.id };
+    }),
   setQuery: (query) => set({ query }),
 
   updateSettings: (patch) =>

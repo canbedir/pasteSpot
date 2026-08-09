@@ -181,6 +181,48 @@
   letter-spacing: 0;
 }
 
+/* The close button rides along with the active tab and shares its lift. */
+.tabWrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.tabClose {
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  z-index: 1;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: 1px solid var(--on-desk-line);
+  border-radius: 50%;
+  background: var(--desk);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  line-height: 1;
+  color: var(--on-desk-muted);
+  place-items: center;
+}
+
+.tabClose:hover {
+  color: var(--on-desk);
+  border-color: var(--on-desk-muted);
+}
+
+.tabInput {
+  width: 8ch;
+  background: var(--paper-text);
+  color: var(--ink);
+  transform: translateY(0);
+}
+
+.tabInput:focus {
+  outline: none;
+}
+
 /* Count of search matches sitting on a page the user is not looking at. */
 .badge {
   display: inline-block;
