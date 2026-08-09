@@ -1,22 +1,13 @@
-## Development
+# Agent instructions
 
-When starting the dev server, use background mode:
+This project keeps its full agent briefing in [`CLAUDE.md`](./CLAUDE.md). Read that
+file first — it covers the product rule, architecture, layout, and the conventions
+that are easy to break.
 
-```
-astro dev --background
-```
+Supporting documents:
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
-
-## Documentation
-
-Full documentation: https://docs.astro.build
-
-Consult these guides before working on related tasks:
-
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+- [`docs/PLAN.md`](./docs/PLAN.md) — phases and what is in or out of scope
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — data model, storage, decisions
+- [`docs/DESIGN.md`](./docs/DESIGN.md) — tokens, desk tones, slip anatomy
+- [`docs/COMMITS.md`](./docs/COMMITS.md) — commit format and scopes
+- [`docs/EXTENSION.md`](./docs/EXTENSION.md) — the planned browser extension
