@@ -1,0 +1,167 @@
+/* ==========================================================================
+   pastespot design tokens
+
+   Nothing in a component may hard-code a colour, radius, or shadow. Desk tones
+   are switchable at runtime, so a literal hex in a component silently defeats
+   the setting. See docs/DESIGN.md.
+   ========================================================================== */
+
+:root {
+  /* ---- type ------------------------------------------------------------ */
+  --font-display: 'Newsreader', ui-serif, Georgia, serif;
+  --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --step--2: 0.6875rem;
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.1875rem;
+  --step-2: 1.5rem;
+  --step-3: clamp(1.75rem, 1.2rem + 2vw, 2.4rem);
+  --step-4: clamp(2.4rem, 1.4rem + 4.4vw, 4rem);
+
+  --tracking-label: 0.12em;
+
+  /* ---- space & shape --------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+
+  --radius-paper: 2px;
+  --radius-ui: 6px;
+  --radius-tab: 7px 7px 0 0;
+
+  /* ---- motion ---------------------------------------------------------- */
+  --ease-settle: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-lift: 0.24s;
+  --dur-slide: 0.52s;
+  --stagger-slip: 45ms;
+
+  /* ---- paper ----------------------------------------------------------- */
+  /* Paper is lit by the room, not by the desk, so these hold across tones. */
+  --paper-text: #f7f3ea;
+  --paper-link: #f4f0e4;
+  --paper-code: #eaeef1;
+
+  --ink: #221f19;
+  --ink-code: #1b2226;
+  --ink-muted: #97907f;
+  --ink-path: #6f7a6c;
+  --ink-placeholder: #a9a292;
+  --paper-rule: rgb(34 31 25 / 9%);
+  --paper-grain-opacity: 0.2;
+
+  --slip-shadow:
+    drop-shadow(0 1px 1px rgb(0 0 0 / 30%))
+    drop-shadow(0 13px 20px rgb(0 0 0 / 42%));
+  --slip-shadow-lift:
+    drop-shadow(0 2px 2px rgb(0 0 0 / 32%))
+    drop-shadow(0 26px 34px rgb(0 0 0 / 55%));
+
+  /* ---- things that sit on the desk ------------------------------------- */
+  --on-desk: rgb(247 243 234 / 88%);
+  --on-desk-muted: rgb(247 243 234 / 52%);
+  --on-desk-faint: rgb(247 243 234 / 34%);
+  --on-desk-line: rgb(247 243 234 / 10%);
+  --on-desk-fill: rgb(247 243 234 / 10%);
+
+  --desk-grain-opacity: 0.38;
+}
+
+/* ==========================================================================
+   Desk tones
+
+   Each tone sets its ground AND the colour of the light falling on it. A warm
+   glow over a cold ground reads as artificial, so they always move together.
+   Applied as [data-tone] on the board root; moss is the default.
+   ========================================================================== */
+
+[data-tone='moss'] {
+  --desk: #0e1411;
+  --desk-glow: rgb(186 255 219 / 10%);
+  --desk-bounce: rgb(255 214 150 / 5%);
+  --accent: #6fd1a8;
+  --accent-ink: #0e1411;
+  --contour-rgb: 198 255 226;
+}
+
+[data-tone='walnut'] {
+  --desk: #17130e;
+  --desk-glow: rgb(255 219 166 / 13%);
+  --desk-bounce: rgb(120 180 255 / 5%);
+  --accent: #d8b070;
+  --accent-ink: #17130e;
+  --contour-rgb: 255 226 186;
+}
+
+[data-tone='ink'] {
+  --desk: #0d111a;
+  --desk-glow: rgb(176 208 255 / 12%);
+  --desk-bounce: rgb(255 196 140 / 4.5%);
+  --accent: #8fb6ff;
+  --accent-ink: #0d111a;
+  --contour-rgb: 200 222 255;
+}
+
+[data-tone='graphite'] {
+  --desk: #141618;
+  --desk-glow: rgb(236 241 246 / 10%);
+  --desk-bounce: rgb(150 190 235 / 4.5%);
+  --accent: #c9ced6;
+  --accent-ink: #141618;
+  --contour-rgb: 236 241 246;
+}
+
+[data-tone='plum'] {
+  --desk: #14101a;
+  --desk-glow: rgb(224 190 255 / 11%);
+  --desk-bounce: rgb(255 190 170 / 5%);
+  --accent: #c3a0ee;
+  --accent-ink: #14101a;
+  --contour-rgb: 232 208 255;
+}
+
+/* ==========================================================================
+   Static pages
+
+   The landing page is a lit room, not a dark desk. It follows the visitor's
+   system preference; the board does not, because the board is furniture.
+   ========================================================================== */
+
+:root {
+  --page-ground: #f2f3f1;
+  --page-surface: #fff;
+  --page-ink: #131714;
+  --page-muted: #676e69;
+  --page-faint: #949b95;
+  --page-rule: #dce0db;
+  --page-accent: #1b4d3e;
+  --page-on-accent: #f2f3f1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --page-ground: #0d100e;
+    --page-surface: #151a17;
+    --page-ink: #e6eae7;
+    --page-muted: #98a09a;
+    --page-faint: #6c746e;
+    --page-rule: #232a25;
+    --page-accent: #74d3ab;
+    --page-on-accent: #0d100e;
+  }
+}
+
+:root[data-theme='dark'] {
+  --page-ground: #0d100e;
+  --page-surface: #151a17;
+  --page-ink: #e6eae7;
+  --page-muted: #98a09a;
+  --page-faint: #6c746e;
+  --page-rule: #232a25;
+  --page-accent: #74d3ab;
+  --page-on-accent: #0d100e;
+}
