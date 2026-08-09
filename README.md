@@ -52,7 +52,6 @@ There is no server, no API route, and no telemetry.
 
 | Document | Contents |
 | --- | --- |
-| [`CLAUDE.md`](./CLAUDE.md) | product rule, architecture, conventions |
 | [`docs/PLAN.md`](./docs/PLAN.md) | phases, success test, what is out of scope |
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | data model, storage, why Astro |
 | [`docs/DESIGN.md`](./docs/DESIGN.md) | tokens, desk tones, slip anatomy |
