@@ -34,7 +34,19 @@ npm install
 npm run dev      # http://localhost:4321
 npm run build    # static output in dist/
 npm run check    # type check
+npm test         # node's built-in runner, no framework
 ```
+
+## Shortcuts
+
+| | |
+| --- | --- |
+| Click an empty spot | new slip there |
+| Paste with nothing focused | new slip, placed for you |
+| <kbd>Ctrl/Cmd</kbd> <kbd>K</kbd> | search — matches stay lit, the rest dim in place |
+| <kbd>Ctrl/Cmd</kbd> <kbd>[</kbd> / <kbd>]</kbd> | previous / next page |
+| Drag a slip's timestamp | move it |
+| Double-click the active tab | rename the page |
 
 ## How it is built
 

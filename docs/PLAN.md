@@ -33,10 +33,11 @@ The things that only hurt after a few weeks of real use.
 - [x] ⌘K search across all pages, dim-in-place instead of a result list
 - [x] Delete a slip
 - [x] Settings: desk tone and surface texture
+- [x] Drag a slip to reposition
+- [x] Rename and delete a page
+- [x] Keyboard: page switching, and paste with nothing focused
 - [ ] Settings: typography, and a reset to defaults
-- [ ] Drag a slip to reposition
-- [ ] Rename and delete a page
-- [ ] Keyboard: new slip, next/previous page, jump between slips
+- [ ] Jump between slips from the keyboard alone
 
 ## Phase 3 — trust
 
