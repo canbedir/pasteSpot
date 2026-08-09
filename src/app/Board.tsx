@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import CommandPalette from './CommandPalette';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
+import { requestPersistentStorage } from './db';
+import { registerServiceWorker } from './offline';
 import { findFreeSpot } from './placement';
 import {
   matchCountOnPage,
@@ -45,6 +47,9 @@ export default function Board() {
   useEffect(() => {
     void load();
     setGrain(grainTile());
+    registerServiceWorker();
+    // Ask before there is anything to lose, not after.
+    void requestPersistentStorage();
   }, [load]);
 
   // Contour is a canvas, so it has to be redrawn for size and tone changes.

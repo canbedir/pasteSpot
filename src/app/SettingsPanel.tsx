@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { storageHealth, type StorageHealth } from './db';
 import { useDesk } from './store';
 import {
   buildExport,
@@ -30,10 +31,22 @@ const SURFACE_LABEL = {
   flat: 'flat',
 } as const;
 
+/** Sizes people recognise, not exact ones. A desk of text is always small. */
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { settings, updateSettings, pages, slips, importSnapshot } = useDesk();
   const fileRef = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [health, setHealth] = useState<StorageHealth | null>(null);
+
+  useEffect(() => {
+    void storageHealth().then(setHealth);
+  }, []);
 
   const handleImport = async (file: File) => {
     try {
@@ -159,8 +172,13 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         <p className={styles.note}>
-          Everything stays in this browser. Nothing is uploaded. Clearing site data
-          deletes it, so export before you do.
+          {slips.length} slip{slips.length === 1 ? '' : 's'} on{' '}
+          {pages.length} page{pages.length === 1 ? '' : 's'}
+          {health && `, using ${formatSize(health.usage)}`}.
+          <br />
+          {health?.persisted
+            ? 'This browser has been asked to keep them, so they survive storage pressure.'
+            : 'Everything stays in this browser. Clearing site data deletes it, so export before you do.'}
         </p>
       </div>
     </div>

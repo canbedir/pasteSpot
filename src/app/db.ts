@@ -81,6 +81,41 @@ export function queueSave(snapshot: Snapshot): void {
 }
 
 /**
+ * Ask the browser not to evict this origin under storage pressure.
+ *
+ * Without this, IndexedDB is "best effort" and a browser clearing space can
+ * delete the desk without asking. Chrome grants it silently on an engaged site;
+ * Firefox may prompt. Failure is not worth reporting — there is nothing the
+ * person could do about it.
+ */
+export async function requestPersistentStorage(): Promise<void> {
+  try {
+    if (!navigator.storage?.persist) return;
+    if (await navigator.storage.persisted()) return;
+    await navigator.storage.persist();
+  } catch {
+    // Unsupported or blocked; the desk still works, just evictably.
+  }
+}
+
+export interface StorageHealth {
+  usage: number;
+  quota: number;
+  persisted: boolean;
+}
+
+export async function storageHealth(): Promise<StorageHealth | null> {
+  try {
+    if (!navigator.storage?.estimate) return null;
+    const { usage = 0, quota = 0 } = await navigator.storage.estimate();
+    const persisted = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    return { usage, quota, persisted };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Closing the tab right after pasting is this product's most common exit path,
  * so a debounce timer that never fires would lose the one slip that mattered.
  * `visibilitychange` is the reliable signal; `pagehide` covers bfcache unloads.

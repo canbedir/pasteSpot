@@ -63,7 +63,8 @@ There is no server, no API route, and no telemetry.
 
 ## Privacy
 
-Everything lives in your browser's IndexedDB. Nothing is transmitted anywhere.
+Everything lives in your browser's IndexedDB. Nothing is transmitted anywhere,
+and after the first visit it opens with the network off.
 
 Clearing site data deletes it, so settings has **export json** and **export text**.
 The JSON round-trips back through **import**; the text file is the one that will
