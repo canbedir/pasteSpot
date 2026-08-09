@@ -1,5 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDesk } from './store';
+import {
+  buildExport,
+  download,
+  exportFilename,
+  ImportError,
+  parseImport,
+  toPlainText,
+} from './transfer';
 import { DESK_SURFACES, DESK_TONES, type DeskTone } from './types';
 import styles from './Overlay.module.css';
 
@@ -23,7 +31,23 @@ const SURFACE_LABEL = {
 } as const;
 
 export default function SettingsPanel({ onClose }: SettingsPanelProps) {
-  const { settings, updateSettings } = useDesk();
+  const { settings, updateSettings, pages, slips, importSnapshot } = useDesk();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const handleImport = async (file: File) => {
+    try {
+      const result = parseImport(await file.text());
+      importSnapshot(result.pages, result.slips);
+      setNotice(
+        `Added ${result.slips.length} slip${result.slips.length === 1 ? '' : 's'} across ${result.pages.length} page${result.pages.length === 1 ? '' : 's'}.`,
+      );
+    } catch (error) {
+      setNotice(
+        error instanceof ImportError ? error.message : 'That file could not be read.',
+      );
+    }
+  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -86,8 +110,57 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           </div>
         </div>
 
+        <div className={styles.group}>
+          <p className={styles.legend}>Your data</p>
+          <div className={styles.row}>
+            <button
+              type="button"
+              className={styles.choice}
+              onClick={() =>
+                download(
+                  exportFilename('json'),
+                  JSON.stringify(buildExport(pages, slips, settings), null, 2),
+                  'application/json',
+                )
+              }
+            >
+              export json
+            </button>
+            <button
+              type="button"
+              className={styles.choice}
+              onClick={() =>
+                download(exportFilename('txt'), toPlainText(pages, slips), 'text/plain')
+              }
+            >
+              export text
+            </button>
+            <button
+              type="button"
+              className={styles.choice}
+              onClick={() => fileRef.current?.click()}
+            >
+              import
+            </button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              // Reset so choosing the same file twice still fires a change.
+              event.target.value = '';
+              if (file) void handleImport(file);
+            }}
+          />
+          {notice && <p className={styles.notice}>{notice}</p>}
+        </div>
+
         <p className={styles.note}>
-          Everything stays in this browser. Nothing is uploaded.
+          Everything stays in this browser. Nothing is uploaded. Clearing site data
+          deletes it, so export before you do.
         </p>
       </div>
     </div>

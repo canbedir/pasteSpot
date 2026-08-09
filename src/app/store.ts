@@ -30,6 +30,7 @@ interface DeskState {
   removePage: (id: string) => void;
   setActivePage: (id: string) => void;
   stepPage: (delta: number) => void;
+  importSnapshot: (pages: Page[], slips: Slip[]) => void;
   setQuery: (query: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
 }
@@ -148,6 +149,30 @@ export const useDesk = create<DeskState>((set, get) => ({
 
   updateSettings: (patch) =>
     set((state) => ({ settings: { ...state.settings, ...patch } })),
+
+  /**
+   * Imports only ever add. The ids arrive already remapped by parseImport, so
+   * restoring a backup onto a desk that already has slips duplicates them
+   * rather than replacing anything.
+   */
+  importSnapshot: (pages, slips) =>
+    set((state) => {
+      // Restoring onto an untouched desk should not leave the empty starter
+      // page behind, or a backup of "desk" arrives next to an empty "desk".
+      const untouched = state.pages.length === 1 && state.slips.length === 0;
+      const existing = untouched ? [] : state.pages;
+
+      const appended = pages.map((page, index) => ({
+        ...page,
+        order: existing.length + index,
+      }));
+
+      return {
+        pages: [...existing, ...appended],
+        slips: [...state.slips, ...slips],
+        activePageId: appended[0]?.id ?? state.activePageId,
+      };
+    }),
 }));
 
 /* -------------------------------------------------------------------------- */

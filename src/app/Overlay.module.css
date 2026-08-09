@@ -202,3 +202,12 @@
 .swatch[aria-pressed='true'] {
   box-shadow: 0 0 0 2px var(--desk), 0 0 0 3.5px var(--accent);
 }
+
+/* Result of an import. Says what happened, in the user's terms. */
+.notice {
+  margin-top: 0.65rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  line-height: 1.5;
+  color: var(--accent);
+}

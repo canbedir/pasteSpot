@@ -64,4 +64,8 @@ There is no server, no API route, and no telemetry.
 ## Privacy
 
 Everything lives in your browser's IndexedDB. Nothing is transmitted anywhere.
-Clearing site data deletes it — export first if you care about it.
+
+Clearing site data deletes it, so settings has **export json** and **export text**.
+The JSON round-trips back through **import**; the text file is the one that will
+still open in ten years. Importing only ever adds — a restored backup can
+duplicate slips, but it can never overwrite what is already on the desk.
