@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { loadSnapshot, queueSave, SCHEMA_VERSION } from './db';
+import { findFreeSpot } from './placement';
 import {
   DEFAULT_SETTINGS,
   type DeskSurface,
@@ -22,6 +23,7 @@ interface DeskState {
 
   load: () => Promise<void>;
   addSlip: (x: number, y: number, body?: string) => string;
+  captureText: (body: string) => string | null;
   updateSlip: (id: string, body: string) => void;
   moveSlip: (id: string, x: number, y: number) => void;
   removeSlip: (id: string) => void;
@@ -82,6 +84,24 @@ export const useDesk = create<DeskState>((set, get) => ({
       ],
     }));
     return id;
+  },
+
+  /**
+   * Take text that arrived without a click — a keyboard paste, or a capture
+   * handed over by the extension — and put it somewhere sensible.
+   *
+   * The single path for every click-free capture, so the keyboard and the
+   * extension cannot drift apart on placement or page overflow.
+   */
+  captureText: (body) => {
+    const text = body.trim();
+    if (!text) return null;
+
+    if (slipsOnPage(get(), get().activePageId).length >= PAGE_CAPACITY) {
+      get().addPage();
+    }
+    const spot = findFreeSpot(slipsOnPage(get(), get().activePageId));
+    return get().addSlip(spot.x, spot.y, text);
   },
 
   updateSlip: (id, body) =>

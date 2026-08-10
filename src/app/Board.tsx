@@ -3,8 +3,8 @@ import CommandPalette from './CommandPalette';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
 import { requestPersistentStorage } from './db';
+import { listenForExtensionCaptures } from './extension';
 import { registerServiceWorker } from './offline';
-import { findFreeSpot } from './placement';
 import {
   matchCountOnPage,
   matchesQuery,
@@ -56,6 +56,7 @@ export default function Board() {
     load,
     addSlip,
     addPage,
+    captureText,
     updateSlip,
     moveSlip,
     removeSlip,
@@ -135,22 +136,18 @@ export default function Board() {
       const target = event.target as HTMLElement | null;
       if (target?.isContentEditable || target?.closest('input, textarea')) return;
 
-      const text = event.clipboardData?.getData('text/plain')?.trim();
-      if (!text) return;
+      const text = event.clipboardData?.getData('text/plain');
+      if (!text?.trim()) return;
       event.preventDefault();
-
-      const current = useDesk.getState();
-      if (slipsOnPage(current, current.activePageId).length >= PAGE_CAPACITY) {
-        addPage();
-      }
-      const after = useDesk.getState();
-      const spot = findFreeSpot(slipsOnPage(after, after.activePageId));
-      addSlip(spot.x, spot.y, text);
+      captureText(text);
     };
 
     document.addEventListener('paste', onPaste);
     return () => document.removeEventListener('paste', onPaste);
-  }, [addSlip, addPage]);
+  }, [captureText]);
+
+  /** Captures handed over by the browser extension arrive the same way. */
+  useEffect(() => listenForExtensionCaptures(captureText), [captureText]);
 
   const activeIndex = Math.max(
     0,
