@@ -2,13 +2,12 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import { detectKind, formatStamp, splitLink } from './detect';
 import { fitOnDesk } from './fit';
 import { formatKeywords, parseKeywords } from './keywords';
-import { restAngle, tornEdge } from './textures';
+import { restAngle, seedOf, tornEdge } from './textures';
 import { type Slip as SlipModel, type SlipKind } from './types';
 import styles from './Slip.module.css';
 
 interface SlipProps {
   slip: SlipModel;
-  index: number;
   grain: string;
   dimmed: boolean;
   /** A search sent us here: lift it and ring it until the person has seen it. */
@@ -51,7 +50,6 @@ function paint(element: HTMLElement, body: string, kind: SlipKind): void {
 
 function Slip({
   slip,
-  index,
   grain,
   dimmed,
   revealed,
@@ -68,8 +66,12 @@ function Slip({
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [labelling, setLabelling] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [clipped, setClipped] = useState(false);
   const kind = detectKind(slip.body);
   const keywords = slip.keywords ?? [];
+  // Tied to the slip, not to where it happens to sit in the array.
+  const seed = seedOf(slip.id);
 
   useLayoutEffect(() => {
     const element = bodyRef.current;
@@ -78,6 +80,19 @@ function Slip({
     if (document.activeElement === element) return;
     paint(element, slip.body, kind);
   }, [slip.body, kind]);
+
+  /**
+   * Whether the text runs past the cap, so the fade and the "more" action only
+   * appear when there is genuinely something below the fold.
+   *
+   * Skipped while expanded: opening the slip removes the cap, which would make it
+   * measure as un-clipped and take the "less" action away again.
+   */
+  useLayoutEffect(() => {
+    const element = bodyRef.current;
+    if (!element || expanded) return;
+    setClipped(element.scrollHeight > element.clientHeight + 2);
+  }, [slip.body, expanded, viewport]);
 
   /**
    * Position is written here rather than through the style prop, because where a
@@ -110,7 +125,7 @@ function Slip({
   // keyword line appearing, the field that edits it, and the window itself.
   useLayoutEffect(() => {
     place(slip.x, slip.y);
-  }, [place, slip.x, slip.y, slip.body, slip.keywords, labelling, viewport]);
+  }, [place, slip.x, slip.y, slip.body, slip.keywords, labelling, expanded, clipped, viewport]);
 
   useEffect(() => {
     if (!autoFocus) return;
@@ -137,6 +152,9 @@ function Slip({
       return;
     }
     paint(element, text, detectKind(text));
+    // The cap comes back on blur, so the paper shrinks and has to be re-fitted.
+    element.scrollTop = 0;
+    place(slip.x, slip.y);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -205,6 +223,8 @@ function Slip({
 
   const className = [
     styles.slip,
+    clipped ? styles.clipped : '',
+    expanded ? styles.expanded : '',
     dimmed ? styles.dimmed : '',
     revealed ? styles.revealed : '',
     dragging ? styles.dragging : '',
@@ -221,14 +241,14 @@ function Slip({
       // left and top are deliberately absent: they are owned by the layout
       // effect above, which is the only thing that knows what fits.
       style={{
-        ['--rest-angle' as string]: restAngle(index),
+        ['--rest-angle' as string]: restAngle(seed),
         ['--settle-delay' as string]: settleDelay !== null ? `${settleDelay}ms` : undefined,
       }}
     >
       <div
         className={`${styles.paper} ${styles[kind]}`}
         style={{
-          clipPath: tornEdge(index),
+          clipPath: tornEdge(seed),
           ['--grain' as string]: grain,
         }}
       >
@@ -242,6 +262,9 @@ function Slip({
           aria-label="Slip"
           data-placeholder="paste or type"
           onInput={handleInput}
+          // Focus lifts the height cap so the caret stays visible, which changes
+          // the paper's size and therefore where it fits.
+          onFocus={() => place(slip.x, slip.y)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         />
@@ -254,13 +277,27 @@ function Slip({
             {formatStamp(slip.updatedAt)}
           </span>
           <div className={styles.actions}>
+            {clipped && (
+              <button
+                type="button"
+                className={styles.action}
+                onClick={() => setExpanded((open) => !open)}
+              >
+                {expanded ? 'less' : 'more'}
+              </button>
+            )}
+            {/*
+              "label", not "keyword": the actions are invisible until hover but
+              still size the paper, since the slip is width:max-content. The
+              longer word pushed every six-digit code from 138px to 190px.
+            */}
             <button
               type="button"
               className={styles.action}
               onClick={() => setLabelling(true)}
               title="Words to find this by"
             >
-              {keywords.length ? 'edit' : 'keyword'}
+              {keywords.length ? 'edit' : 'label'}
             </button>
             <button type="button" className={styles.action} onClick={handleCopy}>
               {copied ? 'copied' : 'copy'}
@@ -313,7 +350,7 @@ function Slip({
         )}
       </div>
 
-      {index % 3 === 0 && <Paperclip />}
+      {seed % 3 === 0 && <Paperclip />}
     </div>
   );
 }

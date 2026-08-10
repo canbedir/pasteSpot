@@ -7,6 +7,13 @@
   transition: transform var(--dur-lift) var(--ease-settle), opacity 0.2s ease;
 }
 
+/* On a phone 54% is 210px, which cramps prose into a column two words wide. */
+@media (max-width: 560px) {
+  .slip {
+    max-width: 82%;
+  }
+}
+
 .slip:hover,
 .slip:focus-within {
   transform: rotate(0deg) translateY(-3px);
@@ -103,10 +110,34 @@
   pointer-events: none;
 }
 
+/* A pasted paragraph is unbounded: 834 characters measured 658px tall, three
+   quarters of a 900px window, for one slip. Capped so a slip stays a slip. */
 .body {
+  max-height: min(13rem, 38vh);
+  overflow: hidden;
   outline: none;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Never clipped while the caret is inside it, or typing past the cap would push
+   the cursor out of sight. Opened by hand, it scrolls rather than growing without
+   limit and pushing itself off the desk. */
+.expanded .body,
+.body:focus {
+  max-height: min(62vh, 600px);
+  overflow-y: auto;
+}
+
+/* The fade is the only signal that there is more; a hard cut would read as the
+   end of the text. */
+.clipped .body {
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+
+.clipped.expanded .body,
+.clipped .body:focus {
+  mask-image: none;
 }
 
 .body:empty::before {

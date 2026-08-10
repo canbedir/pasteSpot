@@ -13,6 +13,27 @@ import {
 /** How many slips make a desk feel full enough to open the next page. */
 export const PAGE_CAPACITY = 14;
 
+/**
+ * How far back Ctrl+Z reaches. Each step holds two array references, and every
+ * mutation is immutable, so the untouched slips are shared rather than copied.
+ */
+const HISTORY_LIMIT = 40;
+
+/**
+ * The desk as it was before one change.
+ *
+ * A whole-state snapshot rather than an inverse operation: there are a dozen ways
+ * to change a desk and only one way to put it back, and the one way cannot drift
+ * out of step with the others.
+ */
+interface HistoryStep {
+  pages: Page[];
+  slips: Slip[];
+  activePageId: string;
+  /** Lit after undoing, so the thing that came back says so itself. */
+  revealId?: string;
+}
+
 interface DeskState {
   ready: boolean;
   pages: Page[];
@@ -22,6 +43,8 @@ interface DeskState {
   query: string;
   /** The slip a search just sent us to. Session state; never persisted. */
   revealedId: string | null;
+  /** Undo steps, oldest first. Session state: history does not survive a reload. */
+  history: HistoryStep[];
 
   load: () => Promise<void>;
   addSlip: (x: number, y: number, body?: string) => string;
@@ -38,6 +61,8 @@ interface DeskState {
   importSnapshot: (pages: Page[], slips: Slip[]) => void;
   setQuery: (query: string) => void;
   revealSlip: (id: string | null) => void;
+  undo: () => void;
+  canUndo: () => boolean;
   updateSettings: (patch: Partial<Settings>) => void;
 }
 
@@ -55,7 +80,28 @@ function makePage(order: number, name?: string): Page {
   };
 }
 
-export const useDesk = create<DeskState>((set, get) => ({
+export const useDesk = create<DeskState>((set, get) => {
+  /**
+   * Put the desk as it stands onto the undo stack.
+   *
+   * Called before the change, never after. Typing is deliberately not recorded:
+   * a contenteditable already has the browser's own undo, and one step per
+   * keystroke would bury everything worth going back to.
+   */
+  const remember = (revealId?: string) =>
+    set((state) => ({
+      history: [
+        ...state.history.slice(-(HISTORY_LIMIT - 1)),
+        {
+          pages: state.pages,
+          slips: state.slips,
+          activePageId: state.activePageId,
+          ...(revealId ? { revealId } : {}),
+        },
+      ],
+    }));
+
+  return {
   ready: false,
   pages: [],
   slips: [],
@@ -63,6 +109,7 @@ export const useDesk = create<DeskState>((set, get) => ({
   activePageId: '',
   query: '',
   revealedId: null,
+  history: [],
 
   load: async () => {
     const snapshot = await loadSnapshot();
@@ -82,6 +129,9 @@ export const useDesk = create<DeskState>((set, get) => ({
   addSlip: (x, y, body = '') => {
     const id = newId();
     const now = Date.now();
+    // A slip made by a click is provisional until it holds something, so it does
+    // not belong on the undo stack; a capture that arrived with text does.
+    if (body.trim()) remember();
     set((state) => ({
       slips: [
         ...state.slips,
@@ -120,39 +170,63 @@ export const useDesk = create<DeskState>((set, get) => ({
    * Keywords are metadata, not content, so this deliberately leaves updatedAt
    * alone: labelling a slip months later must not make it look freshly written.
    */
-  setKeywords: (id, keywords) =>
+  setKeywords: (id, keywords) => {
+    remember(id);
     set((state) => ({
       slips: state.slips.map((slip) =>
         slip.id === id
           ? { ...slip, keywords: keywords.length ? keywords : undefined }
           : slip,
       ),
-    })),
+    }));
+  },
 
-  moveSlip: (id, x, y) =>
-    set((state) => ({
-      slips: state.slips.map((slip) =>
-        slip.id === id ? { ...slip, x, y, updatedAt: Date.now() } : slip,
-      ),
-    })),
+  /**
+   * A moved slip also comes to the front.
+   *
+   * Paint order is array order, so a slip dropped onto an older one used to end
+   * up underneath it with no way to raise it — its text simply gone. Moving is
+   * the gesture for arranging, so it is the right moment to restack, and paper
+   * you have just handled sitting on top is what paper does.
+   */
+  moveSlip: (id, x, y) => {
+    remember(id);
+    set((state) => {
+      const moved = state.slips.find((slip) => slip.id === id);
+      if (!moved) return state;
+      return {
+        slips: [
+          ...state.slips.filter((slip) => slip.id !== id),
+          { ...moved, x, y, updatedAt: Date.now() },
+        ],
+      };
+    });
+  },
 
-  removeSlip: (id) =>
-    set((state) => ({ slips: state.slips.filter((slip) => slip.id !== id) })),
+  removeSlip: (id) => {
+    // A blank slip is a misclick being cleaned up, not a deletion to regret.
+    if (get().slips.find((slip) => slip.id === id)?.body.trim()) remember(id);
+    set((state) => ({ slips: state.slips.filter((slip) => slip.id !== id) }));
+  },
 
   addPage: (name) => {
+    remember();
     const page = makePage(get().pages.length, name);
     set((state) => ({ pages: [...state.pages, page], activePageId: page.id }));
     return page.id;
   },
 
-  renamePage: (id, name) =>
+  renamePage: (id, name) => {
+    remember();
     set((state) => ({
       pages: state.pages.map((page) =>
         page.id === id ? { ...page, name: name.trim() || page.name } : page,
       ),
-    })),
+    }));
+  },
 
-  removePage: (id) =>
+  removePage: (id) => {
+    remember();
     set((state) => {
       // Never leave the desk with no page at all; there would be nowhere to click.
       if (state.pages.length <= 1) return state;
@@ -171,7 +245,8 @@ export const useDesk = create<DeskState>((set, get) => ({
         slips: state.slips.filter((slip) => slip.pageId !== id),
         activePageId: nextActive,
       };
-    }),
+    });
+  },
 
   setActivePage: (id) => set({ activePageId: id }),
 
@@ -192,6 +267,37 @@ export const useDesk = create<DeskState>((set, get) => ({
    */
   revealSlip: (id) => set({ revealedId: id }),
 
+  canUndo: () => get().history.length > 0,
+
+  /**
+   * Put the desk back one step.
+   *
+   * A slip's delete button was one click, unconfirmed and final, on a product
+   * whose whole claim is that nothing gets lost. The answer to a destructive
+   * click is being able to take it back rather than being asked twice, which is
+   * why deleting a slip still asks nothing. Deleting a page keeps its
+   * confirmation: it takes fourteen slips with it, and undo is session-only.
+   */
+  undo: () =>
+    set((state) => {
+      const step = state.history.at(-1);
+      if (!step) return state;
+
+      return {
+        pages: step.pages,
+        slips: step.slips,
+        // Undoing a new page leaves the desk pointing at one that no longer
+        // exists, so the restored page has to be checked before it is trusted.
+        activePageId: step.pages.some((page) => page.id === step.activePageId)
+          ? step.activePageId
+          : (step.pages[0]?.id ?? state.activePageId),
+        // Lighting up what came back is the whole acknowledgement: no toast, no
+        // banner, and no doubt about which slip it was.
+        revealedId: step.revealId ?? null,
+        history: state.history.slice(0, -1),
+      };
+    }),
+
   updateSettings: (patch) =>
     set((state) => ({ settings: { ...state.settings, ...patch } })),
 
@@ -200,7 +306,10 @@ export const useDesk = create<DeskState>((set, get) => ({
    * restoring a backup onto a desk that already has slips duplicates them
    * rather than replacing anything.
    */
-  importSnapshot: (pages, slips) =>
+  importSnapshot: (pages, slips) => {
+    // An import that turns out to be the wrong file drops a whole second desk
+    // onto this one, so it is worth one undo step of its own.
+    remember();
     set((state) => {
       // Restoring onto an untouched desk should not leave the empty starter
       // page behind, or a backup of "desk" arrives next to an empty "desk".
@@ -217,8 +326,10 @@ export const useDesk = create<DeskState>((set, get) => ({
         slips: [...state.slips, ...slips],
         activePageId: appended[0]?.id ?? state.activePageId,
       };
-    }),
-}));
+    });
+  },
+  };
+});
 
 /* -------------------------------------------------------------------------- */
 /* selectors                                                                  */

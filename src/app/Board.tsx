@@ -48,6 +48,18 @@ function modifierLabel(): string {
   return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
 }
 
+/**
+ * Is the caret somewhere that owns its own keys?
+ *
+ * Both global handlers below need this, and both would throw on a target that is
+ * not an element — `closest` does not exist on the document or the window, and an
+ * exception in a window-level keydown listener takes every shortcut down with it.
+ */
+function isTyping(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || target.closest('input, textarea') !== null;
+}
+
 export default function Board() {
   const state = useDesk();
   const {
@@ -70,6 +82,7 @@ export default function Board() {
     revealSlip,
     setActivePage,
     stepPage,
+    undo,
   } = state;
 
   const contourRef = useRef<HTMLCanvasElement>(null);
@@ -147,6 +160,18 @@ export default function Board() {
       const mod = event.metaKey || event.ctrlKey;
       if (!mod) return;
 
+      /**
+       * Undo the last change to the desk. Left alone while the caret is in a
+       * slip or a field, where the browser's own text undo is the right one and
+       * is the reason typing is not on our stack at all.
+       */
+      if (event.key === 'z' && !event.shiftKey) {
+        if (isTyping(event.target)) return;
+        event.preventDefault();
+        undo();
+        return;
+      }
+
       if (event.key === 'k') {
         event.preventDefault();
         setPaletteOpen((open) => !open);
@@ -170,7 +195,7 @@ export default function Board() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [stepPage]);
+  }, [stepPage, undo]);
 
   /**
    * Paste with nothing focused and the slip makes itself. This is the product's
@@ -178,8 +203,7 @@ export default function Board() {
    */
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || target?.closest('input, textarea')) return;
+      if (isTyping(event.target)) return;
 
       const text = event.clipboardData?.getData('text/plain');
       if (!text?.trim()) return;
@@ -276,7 +300,6 @@ export default function Board() {
                 <Slip
                   key={slip.id}
                   slip={slip}
-                  index={index}
                   grain={grain}
                   // While a search is pointing at one slip, everything else
                   // dims — the same language the desk already uses for a
@@ -399,7 +422,7 @@ export default function Board() {
                     const ok =
                       count === 0 ||
                       window.confirm(
-                        `Delete "${page.name}" and its ${count} slip${count === 1 ? '' : 's'}? This cannot be undone.`,
+                        `Delete "${page.name}" and its ${count} slip${count === 1 ? '' : 's'}? ${modifierLabel()}Z puts it back, until you close the tab.`,
                       );
                     if (ok) removePage(page.id);
                   }}

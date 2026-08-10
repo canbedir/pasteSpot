@@ -79,9 +79,26 @@ export function drawContour(canvas: HTMLCanvasElement, rgb: string): void {
 }
 
 /**
+ * A stable seed for one slip, derived from its id.
+ *
+ * This used to be the slip's index in the array, which meant the paper re-tore
+ * and re-rotated whenever anything shifted: deleting one slip changed the torn
+ * edge, the resting angle and the paperclip of every slip after it. An id never
+ * changes, so the paper is torn once and stays that way.
+ */
+export function seedOf(id: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i += 1) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash % 100000);
+}
+
+/**
  * A torn bottom edge as a clip-path polygon.
  *
- * Seeded from the slip's index so a re-render never re-tears the paper. Note
+ * Seeded from the slip itself so a re-render never re-tears the paper. Note
  * that a clipped element needs `filter: drop-shadow`, not `box-shadow` —
  * box-shadow ignores the clip and draws a rectangle underneath.
  */
@@ -96,7 +113,7 @@ export function tornEdge(seed: number, teeth = 18, depth = 3.4): string {
   return `polygon(${points.join(', ')})`;
 }
 
-/** ±1.3°, derived from the index so a slip never jumps to a new angle. */
+/** ±1.3°, derived from the slip's own seed so it never jumps to a new angle. */
 export function restAngle(seed: number): string {
   return `${(((seed * 37) % 7) - 3) * 0.42}deg`;
 }
