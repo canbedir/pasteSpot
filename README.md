@@ -33,7 +33,7 @@ one.
 
 ## Status
 
-Working, and not yet deployed anywhere.
+Working, and deployed on Vercel.
 
 ## Running it
 
@@ -91,6 +91,13 @@ notification this app has. Typing is left to the browser's own undo.
 
 Undo lasts for the session, not across reloads — which is why deleting a whole page
 still asks first.
+
+## Without a mouse
+
+<kbd>Ctrl/Cmd</kbd> <kbd>V</kbd> is the whole capture gesture with the click removed,
+so nothing here needs a pointer. <kbd>Tab</kbd> reaches the controls first and then
+every slip and its actions, and a screen reader is told when something is saved,
+deleted, undone, labelled, or when you move between pages.
 
 ## The extension
 
