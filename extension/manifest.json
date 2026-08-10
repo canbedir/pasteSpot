@@ -23,7 +23,11 @@
   "permissions": ["storage", "contextMenus"],
   "content_scripts": [
     {
-      "matches": ["https://pastespot.app/*", "http://localhost:4321/*"],
+      "matches": [
+        "https://pastespot.vercel.app/*",
+        "https://pastespot.app/*",
+        "http://localhost:4321/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

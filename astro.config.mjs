@@ -102,7 +102,9 @@ function precacheServiceWorker() {
 // https://astro.build/config
 export default defineConfig({
   // Needed for canonical and og:url. Update if the domain changes.
-  site: 'https://pastespot.app',
+  // The live origin. This is what canonical, og:url and og:image are built from,
+  // so a value that does not resolve makes every link preview a dead image.
+  site: 'https://pastespot.vercel.app',
   // The dev toolbar docks to the bottom edge, exactly where the page tabs live.
   devToolbar: { enabled: false },
   integrations: [react(), precacheServiceWorker()],
