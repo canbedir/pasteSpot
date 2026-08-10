@@ -96,6 +96,9 @@ notification this app has. Typing is left to the browser's own undo.
 Undo lasts for the session, not across reloads — which is why deleting a whole page
 still asks first.
 
+Open the desk in two tabs and they stay in step: whichever one saves tells the other,
+and a tab coming back to the foreground re-reads what it missed.
+
 ## Without a mouse
 
 <kbd>Ctrl/Cmd</kbd> <kbd>V</kbd> is the whole capture gesture with the click removed,

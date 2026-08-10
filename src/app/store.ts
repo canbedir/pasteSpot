@@ -9,6 +9,7 @@ import {
   type Page,
   type Settings,
   type Slip,
+  type Snapshot,
   type Viewport,
 } from './types';
 
@@ -67,6 +68,7 @@ interface DeskState {
   setActivePage: (id: string) => void;
   stepPage: (delta: number) => void;
   importSnapshot: (pages: Page[], slips: Slip[]) => void;
+  adoptSnapshot: (snapshot: Snapshot) => void;
   setQuery: (query: string) => void;
   setViewport: (viewport: Viewport) => void;
   revealSlip: (id: string | null) => void;
@@ -269,6 +271,37 @@ export const useDesk = create<DeskState>((set, get) => {
       if (next < 0 || next >= state.pages.length) return state;
       return { activePageId: state.pages[next]!.id };
     }),
+  /**
+   * Take on a desk that another tab wrote.
+   *
+   * `lastSources` is primed with the incoming arrays before the state is set, so the
+   * persistence subscriber sees nothing new and does not write this straight back —
+   * which would broadcast again, and again, between the two tabs forever.
+   *
+   * The undo stack is dropped. Its steps describe a desk that no longer exists, and
+   * undoing into one of them would quietly revert the other tab's work.
+   */
+  adoptSnapshot: (snapshot) =>
+    set((state) => {
+      // A snapshot with no pages means nothing has been saved yet, which is never
+      // worth adopting over a desk that is already open.
+      if (snapshot.pages.length === 0) return state;
+
+      const slips = snapshot.slips.filter(isRealSlip);
+      lastSources = { pages: snapshot.pages, slips, settings: snapshot.settings };
+
+      return {
+        pages: snapshot.pages,
+        slips,
+        settings: snapshot.settings,
+        // The page we were looking at may have been deleted in the other tab.
+        activePageId: snapshot.pages.some((page) => page.id === state.activePageId)
+          ? state.activePageId
+          : (snapshot.pages[0]?.id ?? state.activePageId),
+        history: [],
+      };
+    }),
+
   setQuery: (query) => set({ query }),
 
   setViewport: (viewport) =>

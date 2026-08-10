@@ -4,7 +4,7 @@ import DateView from './DateView';
 import PageOverview from './PageOverview';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
-import { requestPersistentStorage } from './db';
+import { loadSnapshot, onRemoteSave, requestPersistentStorage } from './db';
 import { listenForExtensionCaptures } from './extension';
 import { registerServiceWorker } from './offline';
 import { matchCountOnPage, matchesQuery, pageCapacity, slipsOnPage, useDesk } from './store';
@@ -74,6 +74,7 @@ export default function Board() {
     removePage,
     renamePage,
     revealSlip,
+    adoptSnapshot,
     setActivePage,
     setViewport,
     stepPage,
@@ -238,6 +239,30 @@ export default function Board() {
 
   /** Captures handed over by the browser extension arrive the same way. */
   useEffect(() => listenForExtensionCaptures(captureText), [captureText]);
+
+  /**
+   * Two tabs of the same desk used to overwrite each other, because a save replaces
+   * the whole snapshot under one key and each tab held its own store. Adopting what
+   * another tab wrote keeps them in step instead of racing.
+   */
+  useEffect(() => onRemoteSave(adoptSnapshot), [adoptSnapshot]);
+
+  /**
+   * Coming back to a tab, re-read the desk from disk.
+   *
+   * A tab the browser froze or put in the back/forward cache hears no broadcasts
+   * while it sleeps, so it would wake holding a desk from hours ago and write that
+   * over everything since. `db.ts` flushes on the way out and this reads on the way
+   * back in, which makes the handover between tabs a clean one.
+   */
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      void loadSnapshot().then(adoptSnapshot);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [adoptSnapshot]);
 
   /**
    * A revealed slip is lit long enough to be seen and then let go, so the desk

@@ -54,6 +54,42 @@ export async function loadSnapshot(): Promise<Snapshot> {
   }
 }
 
+/**
+ * Tell the other tabs what was just written.
+ *
+ * A write replaces the whole snapshot under one key, so two tabs each holding their
+ * own store will overwrite each other: with a slip captured in one and then another
+ * captured in the other, the second write carries the first tab's slip away. That
+ * is a person opening the desk twice, which is ordinary, and it lost data.
+ *
+ * Every tab therefore publishes what it wrote and adopts what it hears, which keeps
+ * the stores in step instead of letting them diverge and race.
+ */
+const CHANNEL_NAME = 'pastespot:desk';
+
+let channel: BroadcastChannel | null = null;
+
+function bus(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') return null;
+  channel ??= new BroadcastChannel(CHANNEL_NAME);
+  return channel;
+}
+
+/** Called in every other tab when this one saves. */
+export function onRemoteSave(handle: (snapshot: Snapshot) => void): () => void {
+  const socket = bus();
+  if (!socket) return () => {};
+
+  const listener = (event: MessageEvent) => {
+    const snapshot = event.data as Snapshot | undefined;
+    if (snapshot && Array.isArray(snapshot.slips) && Array.isArray(snapshot.pages)) {
+      handle(snapshot);
+    }
+  };
+  socket.addEventListener('message', listener);
+  return () => socket.removeEventListener('message', listener);
+}
+
 /** Write immediately, bypassing the debounce. */
 export async function flush(): Promise<void> {
   if (timer !== undefined) {
@@ -65,6 +101,9 @@ export async function flush(): Promise<void> {
   pending = null;
   try {
     await set(SNAPSHOT_KEY, snapshot, store);
+    // Only after the write lands: announcing a save that failed would put the
+    // other tabs into a state that is not on disk.
+    bus()?.postMessage(snapshot);
   } catch (error) {
     console.error('pastespot: could not save desk', error);
   }

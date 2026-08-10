@@ -216,3 +216,75 @@ test('a phone stacks captures in one column instead of piling them up', () => {
   assert.equal(new Set(placed.map((s) => s.x)).size, 1, 'every slip should share one column');
   assert.equal(new Set(placed.map((s) => s.y)).size, 6, 'and each should have its own row');
 });
+
+/**
+ * Two tabs of the same desk used to overwrite each other: a save replaces the whole
+ * snapshot under one key, and each tab holds its own store. Adopting what the other
+ * tab wrote is what keeps them in step.
+ */
+test('adopting another tab\u2019s desk replaces pages, slips and settings', () => {
+  desk([page('p1')], [slip('s1')]);
+  useDesk.getState().adoptSnapshot({
+    version: 1,
+    pages: [page('remote')],
+    slips: [slip('r1', 'remote')],
+    settings: { ...DEFAULT_SETTINGS, tone: 'plum' },
+  });
+
+  const after = useDesk.getState();
+  assert.deepEqual(after.pages.map((p) => p.id), ['remote']);
+  assert.deepEqual(after.slips.map((s) => s.id), ['r1']);
+  assert.equal(after.settings.tone, 'plum');
+});
+
+test('adopting drops the undo stack, which described a desk that is gone', () => {
+  desk([page('p1')], [slip('s1'), slip('s2')]);
+  useDesk.getState().removeSlip('s1');
+  assert.equal(useDesk.getState().canUndo(), true);
+
+  useDesk.getState().adoptSnapshot({
+    version: 1,
+    pages: [page('p1')],
+    slips: [slip('s2')],
+    settings: { ...DEFAULT_SETTINGS },
+  });
+  // Undoing into a local past would quietly revert the other tab's work.
+  assert.equal(useDesk.getState().canUndo(), false);
+});
+
+test('adopting follows a page that the other tab deleted', () => {
+  desk([page('p1'), page('p2', 1)], [slip('s1', 'p2')]);
+  useDesk.getState().setActivePage('p2');
+
+  useDesk.getState().adoptSnapshot({
+    version: 1,
+    pages: [page('p1')],
+    slips: [],
+    settings: { ...DEFAULT_SETTINGS },
+  });
+  assert.equal(useDesk.getState().activePageId, 'p1');
+});
+
+test('an empty snapshot is never adopted over a desk that is open', () => {
+  desk([page('p1')], [slip('s1')]);
+  useDesk.getState().adoptSnapshot({
+    version: 1,
+    pages: [],
+    slips: [],
+    settings: { ...DEFAULT_SETTINGS },
+  });
+  // Nothing saved yet is not a desk worth taking on.
+  assert.equal(useDesk.getState().slips.length, 1);
+  assert.equal(useDesk.getState().pages.length, 1);
+});
+
+test('adopting drops blanks, the same way loading does', () => {
+  desk([page('p1')], []);
+  useDesk.getState().adoptSnapshot({
+    version: 1,
+    pages: [page('p1')],
+    slips: [slip('real', 'p1', 'something'), slip('blank', 'p1', '   ')],
+    settings: { ...DEFAULT_SETTINGS },
+  });
+  assert.deepEqual(useDesk.getState().slips.map((s) => s.id), ['real']);
+});
