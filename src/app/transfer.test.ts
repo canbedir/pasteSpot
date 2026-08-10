@@ -56,14 +56,25 @@ test('out-of-range and missing coordinates are clamped onto the desk', () => {
     pages,
     slips: [
       { body: 'far right', pageId: 'p1', x: 900, y: 900 },
+      { body: 'far left', pageId: 'p1', x: -400, y: -400 },
       { body: 'no position', pageId: 'p1' },
     ],
   });
   const back = parseImport(wild);
+  // A stored position is a percentage and nothing else; whether a given slip
+  // fits at the edge is measured at render time by fit.ts.
   for (const slip of back.slips) {
-    assert.ok(slip.x >= 2 && slip.x <= 64, `x out of range: ${slip.x}`);
-    assert.ok(slip.y >= 5 && slip.y <= 72, `y out of range: ${slip.y}`);
+    assert.ok(slip.x >= 0 && slip.x <= 100, `x out of range: ${slip.x}`);
+    assert.ok(slip.y >= 0 && slip.y <= 100, `y out of range: ${slip.y}`);
   }
+  assert.deepEqual(
+    back.slips.map((slip) => [slip.x, slip.y]),
+    [
+      [100, 100],
+      [0, 0],
+      [8, 8],
+    ],
+  );
 });
 
 test('blank slips are dropped rather than imported as ghosts', () => {

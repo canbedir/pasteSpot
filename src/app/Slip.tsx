@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { detectKind, formatStamp, splitLink } from './detect';
+import { fitOnDesk } from './fit';
 import { restAngle, tornEdge } from './textures';
-import { clampToDesk, type Slip as SlipModel, type SlipKind } from './types';
+import { type Slip as SlipModel, type SlipKind } from './types';
 import styles from './Slip.module.css';
 
 interface SlipProps {
@@ -11,6 +12,8 @@ interface SlipProps {
   dimmed: boolean;
   settleDelay: number | null;
   autoFocus: boolean;
+  /** Bumped when the window resizes, so a slip re-measures where it fits. */
+  viewport: number;
   onChange: (id: string, body: string) => void;
   onRemove: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
@@ -42,17 +45,19 @@ function paint(element: HTMLElement, body: string, kind: SlipKind): void {
   }
 }
 
-export default function Slip({
+function Slip({
   slip,
   index,
   grain,
   dimmed,
   settleDelay,
   autoFocus,
+  viewport,
   onChange,
   onRemove,
   onMove,
 }: SlipProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -65,6 +70,37 @@ export default function Slip({
     if (document.activeElement === element) return;
     paint(element, slip.body, kind);
   }, [slip.body, kind]);
+
+  /**
+   * Position is written here rather than through the style prop, because where a
+   * slip fits depends on how big it turned out to be — which is only knowable
+   * once it is laid out. Declared after the paint effect so the measurement sees
+   * the real text.
+   *
+   * This runs again when the text grows and when the window resizes, so a slip
+   * cannot end up half off the desk on a narrower screen than it was placed on.
+   */
+  const place = useCallback((x: number, y: number) => {
+    const root = rootRef.current;
+    const desk = root?.parentElement;
+    if (!root || !desk) return null;
+
+    const fit = fitOnDesk({
+      x,
+      y,
+      slipW: root.offsetWidth,
+      slipH: root.offsetHeight,
+      deskW: desk.clientWidth,
+      deskH: desk.clientHeight,
+    });
+    root.style.left = `${fit.x}%`;
+    root.style.top = `${fit.y}%`;
+    return fit;
+  }, []);
+
+  useLayoutEffect(() => {
+    place(slip.x, slip.y);
+  }, [place, slip.x, slip.y, slip.body, viewport]);
 
   useEffect(() => {
     if (!autoFocus) return;
@@ -103,6 +139,11 @@ export default function Slip({
   /**
    * Dragging is bound to the foot, not the paper, so grabbing a slip can never
    * be confused with selecting the text inside it.
+   *
+   * Each pointer move writes straight to this element's style and nothing else.
+   * Going through the store instead meant a new slips array per move, which
+   * re-rendered every slip on the desk: measured at 112ms a frame with 60 pages
+   * open, against 6ms with one. The store hears about it once, on release.
    */
   const handleDragStart = (event: React.PointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
@@ -115,17 +156,18 @@ export default function Slip({
     const startY = event.clientY;
     const originX = slip.x;
     const originY = slip.y;
+    let landed = { x: originX, y: originY };
 
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
     setDragging(true);
 
     const onPointerMove = (move: PointerEvent) => {
-      const next = clampToDesk(
-        originX + ((move.clientX - startX) / rect.width) * 100,
-        originY + ((move.clientY - startY) / rect.height) * 100,
-      );
-      onMove(slip.id, next.x, next.y);
+      landed =
+        place(
+          originX + ((move.clientX - startX) / rect.width) * 100,
+          originY + ((move.clientY - startY) / rect.height) * 100,
+        ) ?? landed;
     };
 
     const onPointerUp = () => {
@@ -134,6 +176,7 @@ export default function Slip({
       handle.removeEventListener('pointermove', onPointerMove);
       handle.removeEventListener('pointerup', onPointerUp);
       handle.removeEventListener('pointercancel', onPointerUp);
+      if (landed.x !== originX || landed.y !== originY) onMove(slip.id, landed.x, landed.y);
     };
 
     handle.addEventListener('pointermove', onPointerMove);
@@ -162,10 +205,11 @@ export default function Slip({
 
   return (
     <div
+      ref={rootRef}
       className={className}
+      // left and top are deliberately absent: they are owned by the layout
+      // effect above, which is the only thing that knows what fits.
       style={{
-        left: `${slip.x}%`,
-        top: `${slip.y}%`,
         ['--rest-angle' as string]: restAngle(index),
         ['--settle-delay' as string]: settleDelay !== null ? `${settleDelay}ms` : undefined,
       }}
@@ -215,6 +259,13 @@ export default function Slip({
     </div>
   );
 }
+
+/**
+ * Memoised because a search keystroke changes `dimmed` on a handful of slips and
+ * nothing on the rest, and because the store handing back a new slips array must
+ * not mean every slip on the desk re-renders.
+ */
+export default memo(Slip);
 
 function Paperclip() {
   return (

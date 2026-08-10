@@ -199,8 +199,34 @@ export const useDesk = create<DeskState>((set, get) => ({
 /* selectors                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Slips grouped by page, rebuilt only when the slips array itself changes.
+ *
+ * `slipsOnPage` is called once per page and once per tab on every render, so
+ * filtering the whole array each time made rendering cost pages x slips: 560,000
+ * comparisons for a 200-page desk, on every keystroke of a search. Grouping once
+ * makes it a map lookup, and returning the same array each time lets a memoised
+ * slip skip re-rendering entirely.
+ */
+let groupedFrom: Slip[] | null = null;
+let grouped = new Map<string, Slip[]>();
+const NO_SLIPS: Slip[] = [];
+
+function byPage(slips: Slip[]): Map<string, Slip[]> {
+  if (groupedFrom === slips) return grouped;
+  const next = new Map<string, Slip[]>();
+  for (const slip of slips) {
+    const list = next.get(slip.pageId);
+    if (list) list.push(slip);
+    else next.set(slip.pageId, [slip]);
+  }
+  groupedFrom = slips;
+  grouped = next;
+  return next;
+}
+
 export const slipsOnPage = (state: DeskState, pageId: string): Slip[] =>
-  state.slips.filter((slip) => slip.pageId === pageId);
+  byPage(state.slips).get(pageId) ?? NO_SLIPS;
 
 export const isFull = (state: DeskState, pageId: string): boolean =>
   slipsOnPage(state, pageId).length >= PAGE_CAPACITY;

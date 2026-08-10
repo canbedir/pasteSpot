@@ -73,6 +73,7 @@ export default function Board() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [viewport, setViewport] = useState(0);
 
   useEffect(() => {
     void load();
@@ -81,6 +82,24 @@ export default function Board() {
     // Ask before there is anything to lose, not after.
     void requestPersistentStorage();
   }, [load]);
+
+  /**
+   * A resize changes what fits where, so every slip has to re-measure. Counting
+   * resizes rather than storing sizes keeps the signal one number wide, which is
+   * all a memoised slip needs to know that its own measurement went stale.
+   */
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setViewport((count) => count + 1), 150);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
 
   // Contour is a canvas, so it has to be redrawn for size and tone changes.
   useEffect(() => {
@@ -203,22 +222,34 @@ export default function Board() {
         className={styles.track}
         style={{ transform: `translateX(${-activeIndex * 100}%)` }}
       >
-        {pages.map((page) => (
+        {pages.map((page, pageIndex) => (
           <div key={page.id} className={styles.page} data-page onClick={handlePageClick}>
-            {slipsOnPage(state, page.id).map((slip, index) => (
-              <Slip
-                key={slip.id}
-                slip={slip}
-                index={index}
-                grain={grain}
-                dimmed={!matchesQuery(slip, query)}
-                settleDelay={settling ? index * 45 : null}
-                autoFocus={slip.id === focusId}
-                onChange={updateSlip}
-                onRemove={removeSlip}
-                onMove={moveSlip}
-              />
-            ))}
+            {/*
+              Only the page in view and its two neighbours hold their slips. The
+              empty frames stay so the track keeps its geometry and the slide
+              still works, but the desk's DOM no longer grows with its history:
+              840 slips were mounted at once on a 60-page desk, and dragging one
+              cost 112ms a frame.
+
+              The neighbours are mounted rather than the active page alone so a
+              page slides in already painted.
+            */}
+            {Math.abs(pageIndex - activeIndex) <= 1 &&
+              slipsOnPage(state, page.id).map((slip, index) => (
+                <Slip
+                  key={slip.id}
+                  slip={slip}
+                  index={index}
+                  grain={grain}
+                  dimmed={!matchesQuery(slip, query)}
+                  settleDelay={settling ? index * 45 : null}
+                  autoFocus={slip.id === focusId}
+                  viewport={viewport}
+                  onChange={updateSlip}
+                  onRemove={removeSlip}
+                  onMove={moveSlip}
+                />
+              ))}
           </div>
         ))}
       </div>

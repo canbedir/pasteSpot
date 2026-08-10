@@ -1,0 +1,51 @@
+/**
+ * Where a slip actually fits on the desk.
+ *
+ * Position is stored as a percentage so a resize does not scramble the desk, but
+ * whether a slip *fits* depends on pixels: a six-digit code is 140px wide and a
+ * pasted paragraph is 300px, and the same 88% is comfortable for one and off the
+ * screen for the other.
+ *
+ * So the stored percentage is an intent, and this is the only thing that decides
+ * where the paper lands. It runs on drag, on render, and after a resize, which is
+ * why a slip that fitted on a wide window stays reachable on a narrow one.
+ */
+
+/** Breathing room at the desk edge, in px. Paper never touches the rim. */
+export const DESK_EDGE = 10;
+
+/** Kept clear at the bottom for the tab strip, in px. */
+export const TAB_RESERVE = 40;
+
+export interface FitInput {
+  /** Requested top-left, in percent of the desk. */
+  x: number;
+  y: number;
+  /** The slip's own rendered size, in px. */
+  slipW: number;
+  slipH: number;
+  /** The desk's size, in px. */
+  deskW: number;
+  deskH: number;
+}
+
+/**
+ * Clamp a requested position to what the desk can hold, and hand it back in
+ * percent. A slip larger than the desk pins to the top-left rather than being
+ * pushed off it — unreadable beats unreachable.
+ */
+export function fitOnDesk({ x, y, slipW, slipH, deskW, deskH }: FitInput): {
+  x: number;
+  y: number;
+} {
+  // Before first layout there is nothing to measure against; keep the intent.
+  if (deskW <= 0 || deskH <= 0) return { x, y };
+
+  const maxLeft = Math.max(DESK_EDGE, deskW - slipW - DESK_EDGE);
+  const maxTop = Math.max(DESK_EDGE, deskH - slipH - TAB_RESERVE);
+
+  const left = Math.min(Math.max((x / 100) * deskW, DESK_EDGE), maxLeft);
+  const top = Math.min(Math.max((y / 100) * deskH, DESK_EDGE), maxTop);
+
+  return { x: (left / deskW) * 100, y: (top / deskH) * 100 };
+}

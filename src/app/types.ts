@@ -45,11 +45,14 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /**
- * Where a slip's top-left corner may sit, in percent. The right and bottom
- * limits leave room for the slip's own width and for the tab strip, so a slip
- * can never be dropped somewhere it cannot be read or reached.
+ * The range a stored position may hold, in percent.
+ *
+ * This is a sanity rail, not a layout rule. It used to stop at 64% across
+ * because it had to assume the widest slip that could ever exist, which cost a
+ * narrow slip a quarter of the desk. What a given slip can actually reach is
+ * decided from its measured size in `fit.ts`.
  */
-export const SLIP_BOUNDS = { minX: 2, maxX: 64, minY: 5, maxY: 72 } as const;
+export const SLIP_BOUNDS = { minX: 0, maxX: 100, minY: 0, maxY: 100 } as const;
 
 export function clampToDesk(x: number, y: number): { x: number; y: number } {
   const { minX, maxX, minY, maxY } = SLIP_BOUNDS;
