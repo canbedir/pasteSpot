@@ -24,7 +24,7 @@ You never choose a format.
 
 ## Status
 
-Early. Phase 1 is in progress — see [`docs/PLAN.md`](./docs/PLAN.md).
+Working, and not yet deployed anywhere.
 
 ## Running it
 
@@ -45,9 +45,38 @@ bun test         # bun's built-in runner, no framework
 | Click an empty spot | new slip there |
 | Paste with nothing focused | new slip, placed for you |
 | <kbd>Ctrl/Cmd</kbd> <kbd>K</kbd> | search — matches stay lit, the rest dim in place |
+| <kbd>Ctrl/Cmd</kbd> <kbd>P</kbd> | every page at once, as small desks |
+| <kbd>Ctrl/Cmd</kbd> <kbd>Z</kbd> | take back the last change to the desk |
 | <kbd>Ctrl/Cmd</kbd> <kbd>[</kbd> / <kbd>]</kbd> | previous / next page |
-| Drag a slip's timestamp | move it |
+| Drag a slip's timestamp | move it — and bring it to the front |
 | Double-click the active tab | rename the page |
+
+## Finding things again
+
+Three different questions, three answers:
+
+- **"What does it say?"** — <kbd>Ctrl/Cmd</kbd> <kbd>K</kbd>. Matching slips stay
+  exactly where they are and the rest dim, so spatial memory survives. Choosing a
+  result goes to the slip itself, lit, not just to its page.
+- **"Which desk did I put it on?"** — <kbd>Ctrl/Cmd</kbd> <kbd>P</kbd> zooms out to
+  every page, each drawn as a small desk with its slips where they really sit.
+- **"What did I write down on Tuesday?"** — **dates** opens a month at a time, with
+  busy days inked more heavily and the chosen day's slips listed underneath.
+
+Some slips cannot be found by their own text: a password reads `a123fff4` and
+nothing about it will ever come to mind. Any slip can be given **keywords** from its
+foot — write `lol` on it and searching `lol` finds it. This never happens during
+capture, only afterwards, and it is not a tag system: no list, no autocomplete,
+nothing to browse by.
+
+## Nothing is lost by accident
+
+<kbd>Ctrl/Cmd</kbd> <kbd>Z</kbd> takes back a deletion, a move, a label, a renamed
+or deleted page, or an import. The slip that comes back lights up, which is the only
+notification this app has. Typing is left to the browser's own undo.
+
+Undo lasts for the session, not across reloads — which is why deleting a whole page
+still asks first.
 
 ## The extension
 
