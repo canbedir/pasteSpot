@@ -11,6 +11,12 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* The UA rule for [hidden] is display:none at the lowest possible weight, so any
+   component that sets its own display silently defeats it. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--page-ground);

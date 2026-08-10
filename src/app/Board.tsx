@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import CommandPalette from './CommandPalette';
+import PageOverview from './PageOverview';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
 import { requestPersistentStorage } from './db';
@@ -12,6 +13,7 @@ import {
   slipsOnPage,
   useDesk,
 } from './store';
+import { tabCapacity, tabWindow } from './tabs';
 import { drawContour, grainTile, tornEdge } from './textures';
 import { clampToDesk } from './types';
 import styles from './Board.module.css';
@@ -73,7 +75,8 @@ export default function Board() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [viewport, setViewport] = useState(0);
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [viewport, setViewport] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     void load();
@@ -84,15 +87,18 @@ export default function Board() {
   }, [load]);
 
   /**
-   * A resize changes what fits where, so every slip has to re-measure. Counting
-   * resizes rather than storing sizes keeps the signal one number wide, which is
-   * all a memoised slip needs to know that its own measurement went stale.
+   * A resize changes what fits where, so every slip has to re-measure and the
+   * tab strip has to recount. A fresh object each time is the signal a memoised
+   * slip needs to know its own measurement went stale.
    */
   useEffect(() => {
+    const read = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    read();
+
     let timer: ReturnType<typeof setTimeout>;
     const onResize = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => setViewport((count) => count + 1), 150);
+      timer = setTimeout(read, 150);
     };
     window.addEventListener('resize', onResize);
     return () => {
@@ -125,12 +131,26 @@ export default function Board() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // Escape backs out of the zoomed-out view. Harmless when it is closed, and
+      // a slip's own Escape still blurs it.
+      if (event.key === 'Escape') {
+        setOverviewOpen(false);
+        return;
+      }
+
       const mod = event.metaKey || event.ctrlKey;
       if (!mod) return;
 
       if (event.key === 'k') {
         event.preventDefault();
         setPaletteOpen((open) => !open);
+        return;
+      }
+      // Zooming out to every page at once. Printing a desk means nothing, so
+      // the browser's use of this chord is worth taking.
+      if (event.key === 'p') {
+        event.preventDefault();
+        setOverviewOpen((open) => !open);
         return;
       }
       // [ and ] rather than arrows: the browser owns Alt+Arrow for history.
@@ -172,6 +192,7 @@ export default function Board() {
     0,
     pages.findIndex((page) => page.id === activePageId),
   );
+  const tabs = tabWindow(pages.length, activeIndex, tabCapacity(viewport.w));
 
   const goToPage = (id: string) => {
     if (id === activePageId) return;
@@ -254,7 +275,10 @@ export default function Board() {
         ))}
       </div>
 
-      <div className={styles.corner}>
+      {/* The zoomed-out view is a whole screen of its own and carries its own
+          chrome, so the desk's buttons and tab strip would only show through the
+          scrim as clutter. */}
+      <div className={styles.corner} hidden={overviewOpen}>
         <button
           type="button"
           className={styles.cornerButton}
@@ -265,14 +289,39 @@ export default function Board() {
         <button
           type="button"
           className={styles.cornerButton}
+          onClick={() => setOverviewOpen(true)}
+          title={`Every page at once (${modifierLabel()}P)`}
+        >
+          pages
+        </button>
+        <button
+          type="button"
+          className={styles.cornerButton}
           onClick={() => setSettingsOpen(true)}
         >
           settings
         </button>
       </div>
 
-      <div className={styles.tabs}>
-        {pages.map((page) => {
+      <div className={styles.tabs} hidden={overviewOpen}>
+        {/*
+          Only a window of tabs is rendered, so the strip cannot outgrow the
+          window and push the new-page button off the screen. The chips at either
+          end say how many pages are out of sight and open the zoomed-out view,
+          which is the real way around a desk this size.
+        */}
+        {tabs.start > 0 && (
+          <button
+            type="button"
+            className={`${styles.tab} ${styles.tabMore}`}
+            onClick={() => setOverviewOpen(true)}
+            title={`${tabs.start} earlier ${tabs.start === 1 ? 'page' : 'pages'}`}
+          >
+            ‹{tabs.start}
+          </button>
+        )}
+
+        {pages.slice(tabs.start, tabs.end).map((page) => {
           const matches = matchCountOnPage(state, page.id);
           const isActive = page.id === activePageId;
 
@@ -330,6 +379,20 @@ export default function Board() {
             </span>
           );
         })}
+
+        {tabs.end < pages.length && (
+          <button
+            type="button"
+            className={`${styles.tab} ${styles.tabMore}`}
+            onClick={() => setOverviewOpen(true)}
+            title={`${pages.length - tabs.end} later ${
+              pages.length - tabs.end === 1 ? 'page' : 'pages'
+            }`}
+          >
+            {pages.length - tabs.end}›
+          </button>
+        )}
+
         <button
           type="button"
           className={`${styles.tab} ${styles.tabAdd}`}
@@ -340,6 +403,7 @@ export default function Board() {
         </button>
       </div>
 
+      {overviewOpen && <PageOverview onClose={() => setOverviewOpen(false)} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>

@@ -1,0 +1,191 @@
+/* The bird's-eye view: every page as a small desk. Sits above the board and
+   borrows the desk's own tone, so zooming out never feels like leaving the app. */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: rgb(4 5 6 / 74%);
+  backdrop-filter: blur(2px);
+  animation: fade 0.18s ease;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: clamp(0.8rem, 2.5vw, 1.25rem) clamp(0.9rem, 3vw, 1.6rem);
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--on-desk-muted);
+}
+
+.close {
+  margin-left: auto;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--on-desk-line);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--on-desk-muted);
+}
+
+.close:hover {
+  color: var(--on-desk);
+}
+
+.grid {
+  display: grid;
+  flex: 1;
+  gap: clamp(0.7rem, 2vw, 1.1rem);
+  overflow-y: auto;
+  padding: 0 clamp(0.9rem, 3vw, 1.6rem) clamp(1.2rem, 4vw, 2rem);
+  grid-template-columns: repeat(auto-fill, minmax(clamp(130px, 17vw, 210px), 1fr));
+  align-content: start;
+}
+
+.card {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+/* One page, drawn at the desk's own proportions so the arrangement inside it
+   is the arrangement you remember. */
+.mini {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--on-desk-line);
+  border-radius: var(--radius-ui);
+  background:
+    radial-gradient(90% 62% at 50% -8%, var(--desk-glow), transparent 72%),
+    var(--desk);
+  transition: border-color 0.16s ease, transform 0.16s var(--ease-settle);
+}
+
+.card:hover .mini {
+  transform: translateY(-2px);
+  border-color: var(--on-desk-muted);
+}
+
+.card:focus-visible {
+  outline: none;
+}
+
+.card:focus-visible .mini {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.card[aria-current='true'] .mini {
+  border-color: var(--accent);
+}
+
+/* A slip, at its real position. Paper colours carry over from the desk so a
+   code reads as a code even at this size. */
+.mark {
+  position: absolute;
+  width: 20%;
+  height: 8.5%;
+  border-radius: 1px;
+  background: var(--paper-text);
+  opacity: 0.82;
+}
+
+.mark[data-kind='code'] {
+  background: var(--paper-code);
+}
+
+.mark[data-kind='link'] {
+  background: var(--paper-link);
+}
+
+/* Dimming works the same way it does on the desk: matches stay lit, the rest
+   fade in place rather than disappearing. */
+.mark[data-lit='false'] {
+  opacity: 0.16;
+}
+
+.mark[data-lit='true'] {
+  box-shadow: 0 0 0 1.5px var(--accent);
+  opacity: 1;
+}
+
+/* The one card that is not a page. Dashed so it reads as a slot, not a desk. */
+.add {
+  display: grid;
+  border-style: dashed;
+  background: none;
+  color: var(--on-desk-faint);
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  place-items: center;
+}
+
+.card:hover .add {
+  color: var(--on-desk);
+}
+
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--on-desk-faint);
+  transform: translate(-50%, -50%);
+}
+
+.label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--on-desk-muted);
+}
+
+.card[aria-current='true'] .name {
+  color: var(--accent);
+}
+
+.name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.count {
+  margin-left: auto;
+  color: var(--on-desk-faint);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

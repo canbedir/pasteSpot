@@ -104,7 +104,9 @@
 
 /* ---- tabs -------------------------------------------------------------- */
 
-/* Folder dividers: the active one is pulled forward, the rest sit back. */
+/* Folder dividers: the active one is pulled forward, the rest sit back.
+   The strip holds a window of tabs rather than all of them, so it cannot
+   outgrow the desk — there is nothing left to scroll. */
 .tabs {
   position: absolute;
   z-index: 5;
@@ -113,19 +115,18 @@
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  max-width: 92%;
-  overflow-x: auto;
+  max-width: 96%;
   transform: translateX(-50%);
-  scrollbar-width: none;
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .tab {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 14ch;
+  overflow: hidden;
   padding: 0.42rem 0.85rem 0.55rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   border: 1px solid var(--on-desk-line);
   border-bottom: 0;
   border-radius: var(--radius-tab);
@@ -157,9 +158,27 @@
 }
 
 .tabAdd {
+  flex: 0 0 auto;
   padding-inline: 0.7rem;
   font-size: 0.75rem;
   letter-spacing: 0;
+}
+
+/* How many pages are out of sight on that side. Reads as a count, not a tab,
+   so it does not look like somewhere you could already be. */
+.tabMore {
+  flex: 0 0 auto;
+  max-width: none;
+  padding-inline: 0.5rem;
+  border-color: transparent;
+  background: none;
+  color: var(--on-desk-faint);
+  letter-spacing: 0.04em;
+}
+
+.tabMore:hover {
+  background: var(--on-desk-fill);
+  color: var(--on-desk);
 }
 
 /* The close button rides along with the active tab and shares its lift. */

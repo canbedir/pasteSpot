@@ -12,8 +12,8 @@ interface SlipProps {
   dimmed: boolean;
   settleDelay: number | null;
   autoFocus: boolean;
-  /** Bumped when the window resizes, so a slip re-measures where it fits. */
-  viewport: number;
+  /** Replaced when the window resizes, so a slip re-measures where it fits. */
+  viewport: { w: number; h: number };
   onChange: (id: string, body: string) => void;
   onRemove: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
