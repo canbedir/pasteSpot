@@ -200,3 +200,29 @@ Clearing site data deletes it, so settings has **export json** and **export text
 JSON round-trips back through **import**; the text file is the one that will still open
 in ten years. Importing only ever adds — a restored backup can duplicate slips, but it
 can never overwrite what is already on the desk.
+
+## License
+
+[**AGPL-3.0**](./LICENSE) — Copyright © 2026 canbedir.
+
+Read it, learn from it, fork it, run your own. If you deploy a modified version where
+other people can use it, that version's source has to be available to them too.
+
+That is the same promise the app itself makes about your data, pointed at the code:
+nothing here is kept from the person using it. A permissive licence would let someone
+take the desk, close it, and ship it as a product — the one outcome worth preventing.
+Plain GPL would not have managed it, because a web app is served rather than
+distributed, and GPL-2 is ruled out outright: `idb-keyval` ships inside the bundle
+under Apache-2.0, which GPL-2 cannot include.
+
+<details>
+<summary>What else is in here, and under what terms</summary>
+
+| | |
+| --- | --- |
+| Astro, React, zustand | MIT |
+| `idb-keyval` | Apache-2.0 |
+| Newsreader, IBM Plex (subset, in `public/fonts/`) | SIL OFL 1.1 — see [`public/fonts/LICENSE.txt`](./public/fonts/LICENSE.txt) |
+| The pastespot mark and wordmark | © 2026 canbedir, all rights reserved — the code is AGPL, the brand is not |
+
+</details>

@@ -24,7 +24,9 @@ function precacheServiceWorker() {
    */
   const shouldPrecache = (path) =>
     path.startsWith('_astro/') ||
-    path.startsWith('fonts/') ||
+    // The fonts themselves, not the OFL notice that ships beside them: the licence
+    // has to travel with the files, but nobody needs it to open the desk offline.
+    /^fonts\/.+\.woff2$/.test(path) ||
     path.startsWith('icons/') ||
     /^favicon(-\d+)?\.(png|svg|ico)$/.test(path) ||
     /^(logo|logo-white|lockup-white)\.svg$/.test(path) ||
