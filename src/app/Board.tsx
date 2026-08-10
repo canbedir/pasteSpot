@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import CommandPalette from './CommandPalette';
+import DateView from './DateView';
 import PageOverview from './PageOverview';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
@@ -79,6 +80,7 @@ export default function Board() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [datesOpen, setDatesOpen] = useState(false);
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -138,6 +140,7 @@ export default function Board() {
       // a slip's own Escape still blurs it.
       if (event.key === 'Escape') {
         setOverviewOpen(false);
+        setDatesOpen(false);
         return;
       }
 
@@ -298,7 +301,7 @@ export default function Board() {
       {/* The zoomed-out view is a whole screen of its own and carries its own
           chrome, so the desk's buttons and tab strip would only show through the
           scrim as clutter. */}
-      <div className={styles.corner} hidden={overviewOpen}>
+      <div className={styles.corner} hidden={overviewOpen || datesOpen}>
         <button
           type="button"
           className={styles.cornerButton}
@@ -313,6 +316,14 @@ export default function Board() {
           title={`Every page at once (${modifierLabel()}P)`}
         >
           pages
+        </button>
+        <button
+          type="button"
+          className={styles.cornerButton}
+          onClick={() => setDatesOpen(true)}
+          title="What was captured when"
+        >
+          dates
         </button>
         <button
           type="button"
@@ -424,6 +435,7 @@ export default function Board() {
       </div>
 
       {overviewOpen && <PageOverview onClose={() => setOverviewOpen(false)} />}
+      {datesOpen && <DateView onClose={() => setDatesOpen(false)} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
