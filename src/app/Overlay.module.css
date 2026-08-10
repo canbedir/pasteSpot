@@ -177,6 +177,11 @@
   gap: 0.45rem;
 }
 
+/* A second row inside one group — the face and its size are one decision. */
+.rowSpaced {
+  margin-top: 0.45rem;
+}
+
 .choice {
   padding: 0.3rem 0.6rem;
   border: 1px solid var(--on-desk-line);

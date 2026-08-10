@@ -17,6 +17,8 @@ interface SlipProps {
   autoFocus: boolean;
   /** Replaced when the window resizes, so a slip re-measures where it fits. */
   viewport: { w: number; h: number };
+  /** The typography settings, for the same reason: they change the paper size. */
+  metrics: string;
   onChange: (id: string, body: string) => void;
   onKeywords: (id: string, keywords: string[]) => void;
   onRemove: (id: string) => void;
@@ -64,6 +66,7 @@ function Slip({
   settleDelay,
   autoFocus,
   viewport,
+  metrics,
   onChange,
   onKeywords,
   onRemove,
@@ -102,7 +105,7 @@ function Slip({
     const element = bodyRef.current;
     if (!element || expanded) return;
     setClipped(element.scrollHeight > element.clientHeight + 2);
-  }, [slip.body, expanded, viewport]);
+  }, [slip.body, expanded, viewport, metrics]);
 
   /**
    * Position is written here rather than through the style prop, because where a
@@ -135,7 +138,18 @@ function Slip({
   // keyword line appearing, the field that edits it, and the window itself.
   useLayoutEffect(() => {
     place(slip.x, slip.y);
-  }, [place, slip.x, slip.y, slip.body, slip.keywords, labelling, expanded, clipped, viewport]);
+  }, [
+    place,
+    slip.x,
+    slip.y,
+    slip.body,
+    slip.keywords,
+    labelling,
+    expanded,
+    clipped,
+    viewport,
+    metrics,
+  ]);
 
   useEffect(() => {
     if (!autoFocus) return;

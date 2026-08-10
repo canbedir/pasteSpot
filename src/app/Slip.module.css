@@ -179,7 +179,7 @@
 
 .code .body {
   font-family: var(--font-mono);
-  font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.375rem);
+  font-size: calc(clamp(1.0625rem, 0.95rem + 0.5vw, 1.375rem) * var(--slip-scale));
   line-height: 1.35;
   letter-spacing: 0.055em;
   font-variant-numeric: tabular-nums;
@@ -192,7 +192,7 @@
 
 .link .body {
   font-family: var(--font-body);
-  font-size: var(--step--1);
+  font-size: calc(var(--step--1) * var(--slip-scale));
   line-height: 1.5;
   color: var(--accent-strong, #2a6b51);
 }
@@ -202,8 +202,8 @@
 }
 
 .text .body {
-  font-family: var(--font-display);
-  font-size: 1.03125rem;
+  font-family: var(--font-prose);
+  font-size: calc(1.03125rem * var(--slip-scale));
   line-height: 1.58;
   letter-spacing: 0.004em;
 }
@@ -227,7 +227,9 @@
   padding-top: 0.35rem;
   border-top: 1px solid var(--paper-rule);
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
+  /* Follows the text size upwards but has a floor: the foot is already the
+     smallest thing on the paper, and "small" alone took it to 7.9px. */
+  font-size: max(8.5px, calc(0.5625rem * var(--slip-scale)));
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-muted);
@@ -293,7 +295,7 @@
   gap: 0.25rem 0.4rem;
   margin-top: 0.3rem;
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
+  font-size: max(8.5px, calc(0.5625rem * var(--slip-scale)));
   letter-spacing: 0.06em;
   color: var(--ink-muted);
 }
@@ -313,7 +315,7 @@
   background: rgb(34 31 25 / 4%);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
+  font-size: max(8.5px, calc(0.5625rem * var(--slip-scale)));
   letter-spacing: 0.06em;
 }
 

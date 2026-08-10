@@ -9,7 +9,15 @@ import {
   parseImport,
   toPlainText,
 } from './transfer';
-import { DESK_SURFACES, DESK_TONES, type DeskTone } from './types';
+import {
+  DEFAULT_SETTINGS,
+  DESK_SURFACES,
+  DESK_TONES,
+  PROSE_FACES,
+  TEXT_SIZES,
+  type DeskTone,
+  type ProseFace,
+} from './types';
 import styles from './Overlay.module.css';
 
 interface SettingsPanelProps {
@@ -31,6 +39,14 @@ const SURFACE_LABEL = {
   flat: 'flat',
 } as const;
 
+const PROSE_LABEL = { serif: 'serif', sans: 'sans' } as const;
+
+/** Each option previews itself, which beats any label describing a typeface. */
+const PROSE_FONT: Record<ProseFace, string> = {
+  serif: 'var(--font-display)',
+  sans: 'var(--font-body)',
+};
+
 /** Sizes people recognise, not exact ones. A desk of text is always small. */
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -47,6 +63,10 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   useEffect(() => {
     void storageHealth().then(setHealth);
   }, []);
+
+  const changed = (Object.keys(DEFAULT_SETTINGS) as Array<keyof typeof DEFAULT_SETTINGS>).some(
+    (key) => settings[key] !== DEFAULT_SETTINGS[key],
+  );
 
   const handleImport = async (file: File) => {
     try {
@@ -129,6 +149,38 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         <div className={styles.group}>
+          <p className={styles.legend}>Writing</p>
+          <div className={styles.row}>
+            {PROSE_FACES.map((prose) => (
+              <button
+                key={prose}
+                type="button"
+                className={styles.choice}
+                // Set in the face it is offering, so the choice shows itself.
+                style={{ fontFamily: PROSE_FONT[prose] }}
+                aria-pressed={settings.prose === prose}
+                onClick={() => updateSettings({ prose })}
+              >
+                {PROSE_LABEL[prose]}
+              </button>
+            ))}
+          </div>
+          <div className={`${styles.row} ${styles.rowSpaced}`}>
+            {TEXT_SIZES.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={styles.choice}
+                aria-pressed={settings.size === size}
+                onClick={() => updateSettings({ size })}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.group}>
           <p className={styles.legend}>Your data</p>
           <div className={styles.row}>
             <button
@@ -175,6 +227,24 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           />
           {notice && <p className={styles.notice}>{notice}</p>}
         </div>
+
+        {/* Only offered once something has actually been changed, so the panel does
+            not carry a button that undoes nothing. Appearance only: it cannot
+            touch a slip, which is why it needs no confirmation. */}
+        {changed && (
+          <div className={styles.group}>
+            <button
+              type="button"
+              className={styles.choice}
+              onClick={() => {
+                updateSettings(DEFAULT_SETTINGS);
+                setNotice('Appearance back to default. Your slips are untouched.');
+              }}
+            >
+              reset appearance
+            </button>
+          </div>
+        )}
 
         <p className={styles.note}>
           {slips.length} slip{slips.length === 1 ? '' : 's'} on{' '}

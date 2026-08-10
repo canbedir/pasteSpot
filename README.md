@@ -31,6 +31,10 @@ On a phone the desk lays slips out in a single column down the page, and opens i
 next page sooner, because a grid built for a 1440px window buries them on a 390px
 one.
 
+Settings change the desk tone, the surface texture, and the writing — prose in serif
+or sans, at three sizes. Codes stay monospace and links stay sans whichever you pick:
+those are typeset for what they are, not for taste.
+
 ## Status
 
 Working, and deployed on Vercel.

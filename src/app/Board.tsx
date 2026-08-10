@@ -294,6 +294,8 @@ export default function Board() {
       className={styles.board}
       data-tone={settings.tone}
       data-surface={settings.surface}
+      data-prose={settings.prose}
+      data-size={settings.size}
       style={{ ['--grain' as string]: grain }}
     >
       <canvas ref={contourRef} className={styles.contour} aria-hidden="true" />
@@ -475,6 +477,8 @@ export default function Board() {
                   settleDelay={settling ? index * 45 : null}
                   autoFocus={slip.id === focusId}
                   viewport={viewport}
+                  // Typography changes the paper`s size, so it changes what fits.
+                  metrics={`${settings.prose}-${settings.size}`}
                   onChange={updateSlip}
                   onKeywords={setKeywords}
                   onRemove={removeSlip}

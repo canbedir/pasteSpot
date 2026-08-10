@@ -22,6 +22,12 @@
 
   --tracking-label: 0.12em;
 
+  /* What a prose slip is set in, and how big the writing on a slip is. Both are
+     settings, applied as [data-prose] and [data-size] on the board root. Every
+     slip size is multiplied by --slip-scale, so nothing hard-codes a final size. */
+  --font-prose: var(--font-display);
+  --slip-scale: 1;
+
   /* ---- space & shape --------------------------------------------------- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -86,6 +92,29 @@
   --on-desk-fill: rgb(247 243 234 / 10%);
 
   --desk-grain-opacity: 0.38;
+}
+
+/* ==========================================================================
+   Typography settings
+
+   Only faces the site already self-hosts are offered: adding one would mean a
+   font file to fetch, and an app that opens with the network off cannot depend on
+   a download. Codes stay monospace and links stay sans whatever is chosen — those
+   are typeset for what they are, not for preference.
+   ========================================================================== */
+
+[data-prose='sans'] {
+  --font-prose: var(--font-body);
+}
+
+/* Steps, not a slider. A slider invites a size nobody wants and a value that has
+   to be persisted and validated; three named steps cover the actual need. */
+[data-size='small'] {
+  --slip-scale: 0.88;
+}
+
+[data-size='large'] {
+  --slip-scale: 1.2;
 }
 
 /* ==========================================================================

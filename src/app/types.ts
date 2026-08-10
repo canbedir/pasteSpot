@@ -4,6 +4,18 @@ export type SlipKind = 'code' | 'link' | 'text';
 export type DeskTone = 'moss' | 'walnut' | 'ink' | 'graphite' | 'plum';
 export type DeskSurface = 'pool' | 'contour' | 'flat';
 
+/**
+ * The face a prose slip is set in. Codes stay monospace and links stay sans
+ * whatever this says — those two are typeset for what they are, not for taste.
+ *
+ * Only faces the site already ships are offered. Anything else would mean new font
+ * files, and an offline-first app that has to fetch a font is not offline-first.
+ */
+export type ProseFace = 'serif' | 'sans';
+
+/** How large the writing on a slip is. Comfort, and an accessibility floor. */
+export type TextSize = 'small' | 'normal' | 'large';
+
 export interface Slip {
   id: string;
   pageId: string;
@@ -32,6 +44,8 @@ export interface Page {
 export interface Settings {
   tone: DeskTone;
   surface: DeskSurface;
+  prose: ProseFace;
+  size: TextSize;
 }
 
 /** The desk's measured size in px. Never stored; it belongs to the screen. */
@@ -49,10 +63,14 @@ export interface Snapshot {
 
 export const DESK_TONES: readonly DeskTone[] = ['moss', 'walnut', 'ink', 'graphite', 'plum'];
 export const DESK_SURFACES: readonly DeskSurface[] = ['pool', 'contour', 'flat'];
+export const PROSE_FACES: readonly ProseFace[] = ['serif', 'sans'];
+export const TEXT_SIZES: readonly TextSize[] = ['small', 'normal', 'large'];
 
 export const DEFAULT_SETTINGS: Settings = {
   tone: 'moss',
   surface: 'pool',
+  prose: 'serif',
+  size: 'normal',
 };
 
 /**
