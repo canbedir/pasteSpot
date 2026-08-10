@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { detectKind, formatStamp, splitLink } from './detect';
+import { patina } from './age';
+import { detectKind, formatStamp, groupDigits, splitLink } from './detect';
 import { fitOnDesk } from './fit';
 import { formatKeywords, parseKeywords } from './keywords';
 import { restAngle, seedOf, tornEdge } from './textures';
@@ -28,10 +29,15 @@ interface SlipProps {
  * React never renders the body, because re-rendering a focused contenteditable
  * collapses the caret to the start on every keystroke. The DOM is the source of
  * truth while editing; the store catches up on input.
+ *
+ * What is painted is a *presentation* of the body, not the body: a link shows its
+ * host emphasised and its scheme dropped, and a long card number is regrouped in
+ * fours. Neither is what gets stored, which is why `showTruth` below has to run
+ * the moment the text becomes editable.
  */
 function paint(element: HTMLElement, body: string, kind: SlipKind): void {
   if (kind !== 'link') {
-    element.textContent = body;
+    element.textContent = groupDigits(body) ?? body;
     return;
   }
   const { host, path } = splitLink(body);
@@ -62,6 +68,7 @@ function Slip({
   onMove,
 }: SlipProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -140,6 +147,27 @@ function Slip({
 
   const handleInput = () => {
     onChange(slip.id, bodyRef.current?.textContent ?? '');
+  };
+
+  /**
+   * Replace the presentation with the real text, and leave the caret at the end.
+   *
+   * `handleInput` stores whatever is in the element, so anything the element shows
+   * that is not the body is a way to lose data. A link painted as host and path
+   * had already dropped its `https://`: typing one character into it stored the
+   * shortened text and the scheme was gone for good.
+   */
+  const showTruth = () => {
+    const element = bodyRef.current;
+    if (!element || element.textContent === slip.body) return;
+
+    element.textContent = slip.body;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    const selection = getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
   };
 
   const handleBlur = () => {
@@ -246,10 +274,14 @@ function Slip({
       }}
     >
       <div
+        ref={paperRef}
         className={`${styles.paper} ${styles[kind]}`}
         style={{
           clipPath: tornEdge(seed),
           ['--grain' as string]: grain,
+          // Age is read from when the slip was made, never from when it was last
+          // touched: editing a note from March does not make the paper new again.
+          ['--patina' as string]: patina(slip.createdAt),
         }}
       >
         <div
@@ -262,9 +294,12 @@ function Slip({
           aria-label="Slip"
           data-placeholder="paste or type"
           onInput={handleInput}
-          // Focus lifts the height cap so the caret stays visible, which changes
-          // the paper's size and therefore where it fits.
-          onFocus={() => place(slip.x, slip.y)}
+          onFocus={() => {
+            showTruth();
+            // Focus also lifts the height cap so the caret stays visible, which
+            // changes the paper's size and therefore where it fits.
+            place(slip.x, slip.y);
+          }}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         />
@@ -299,7 +334,30 @@ function Slip({
             >
               {keywords.length ? 'edit' : 'label'}
             </button>
-            <button type="button" className={styles.action} onClick={handleCopy}>
+            {/*
+              Copy is also the drag handle for taking the text out of the browser.
+              It cannot live on the timestamp, which already owns dragging the slip
+              around the desk — a native drag and a pointer drag on one element are
+              mutually exclusive, since the browser takes over the pointer stream.
+              Putting it here costs no new chrome and means the same thing: take
+              this text somewhere else.
+            */}
+            <button
+              type="button"
+              className={styles.action}
+              draggable
+              title="Copy, or drag it into another window"
+              onDragStart={(event) => {
+                event.dataTransfer.setData('text/plain', slip.body);
+                // A link dropped on a tab strip or a browser window should open.
+                if (kind === 'link') event.dataTransfer.setData('text/uri-list', slip.body);
+                event.dataTransfer.effectAllowed = 'copy';
+                // Drag the paper, not the word "copy".
+                const paper = paperRef.current;
+                if (paper) event.dataTransfer.setDragImage(paper, 24, 18);
+              }}
+              onClick={handleCopy}
+            >
               {copied ? 'copied' : 'copy'}
             </button>
             <button

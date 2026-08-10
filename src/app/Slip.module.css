@@ -97,6 +97,32 @@
   filter: var(--slip-shadow-lift);
 }
 
+/* Age, as a wash that gathers at the edges the way real paper does. Strength
+   comes from --patina, which is 0 for a slip made today. Sits under the text and
+   never intercepts a click. */
+.paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 100% at 50% 50%, transparent 42%, var(--paper-patina-edge)),
+    var(--paper-patina);
+  opacity: var(--patina, 0);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* The text has to sit above the wash. */
+.body,
+.foot,
+.keywords,
+.keywordField {
+  position: relative;
+  z-index: 1;
+}
+
 /* The paper's own grain, distinct from the desk's. */
 .paper::after {
   content: '';

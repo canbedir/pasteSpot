@@ -34,6 +34,34 @@ export function detectKind(body: string): SlipKind {
   return 'text';
 }
 
+/**
+ * A long unbroken run of digits, regrouped in fours so it can be read back.
+ *
+ * `4242424242424242` and `TR330006100519786457841326` are the shapes people paste
+ * from a banking app, and both are almost impossible to read aloud or check
+ * against a form. Cards and IBANs are conventionally written in fours, so this is
+ * how they are meant to look.
+ *
+ * Returns null when the string should be left alone. Two deliberate exclusions:
+ *
+ * - Anything already containing a space is presented the way it was pasted.
+ * - Anything under 14 characters. A Turkish mobile is 11 digits and reads as
+ *   `0532 118 4470`, and an ISBN is 13 and groups as `978-975-07-3607-0`; fours
+ *   would be wrong for both, and wrong grouping is worse than none.
+ *
+ * This is a *rendering*, never the stored text. The body keeps exactly what was
+ * pasted, which is what a copy hands back.
+ */
+const GROUPABLE = /^(?:[A-Z]{2})?\d{12,}$/;
+
+export function groupDigits(body: string): string | null {
+  const text = body.trim();
+  if (text.length < 14 || /\s/.test(text)) return null;
+  if (!GROUPABLE.test(text)) return null;
+
+  return text.match(/.{1,4}/g)?.join(' ') ?? null;
+}
+
 /** Split a link into host and path so the host can carry the emphasis. */
 export function splitLink(body: string): { host: string; path: string } {
   const bare = body.trim().replace(/^https?:\/\//i, '');

@@ -54,6 +54,12 @@
   --paper-rule: rgb(34 31 25 / 9%);
   --paper-grain-opacity: 0.2;
 
+  /* Age. Paper yellows, which is how the desk shows time without spending any
+     space on it. Applied at `--patina` strength, from 0 today to 1 at a year.
+     Warm and weak on purpose: this must never cost legibility. */
+  --paper-patina: rgb(196 148 62 / 26%);
+  --paper-patina-edge: rgb(150 106 40 / 30%);
+
   --slip-shadow:
     drop-shadow(0 1px 1px rgb(0 0 0 / 30%))
     drop-shadow(0 13px 20px rgb(0 0 0 / 42%));
