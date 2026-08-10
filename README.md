@@ -19,8 +19,13 @@ click, paste. There is no marketing page in front of it — opening the site ope
 the desk.
 
 What you paste types itself. A number renders as large monospace because the reason
-it exists is to be read back. A URL renders as a link. A sentence renders as prose.
-You never choose a format.
+it exists is to be read back. A card number or IBAN is regrouped in fours so you can
+read it aloud. A URL renders as a link. A sentence renders as prose. You never choose
+a format, and the text itself is never altered — only how it looks.
+
+Paper yellows, too. Something from this morning is bright white and something from
+last spring is tea-stained, so you can see how old a corner of the desk is without
+reading a single timestamp.
 
 ## Status
 
@@ -49,6 +54,7 @@ bun test         # bun's built-in runner, no framework
 | <kbd>Ctrl/Cmd</kbd> <kbd>Z</kbd> | take back the last change to the desk |
 | <kbd>Ctrl/Cmd</kbd> <kbd>[</kbd> / <kbd>]</kbd> | previous / next page |
 | Drag a slip's timestamp | move it — and bring it to the front |
+| Drag a slip's **copy** | drop the text into another window |
 | Double-click the active tab | rename the page |
 
 ## Finding things again
@@ -57,7 +63,11 @@ Three different questions, three answers:
 
 - **"What does it say?"** — <kbd>Ctrl/Cmd</kbd> <kbd>K</kbd>. Matching slips stay
   exactly where they are and the rest dim, so spatial memory survives. Choosing a
-  result goes to the slip itself, lit, not just to its page.
+  result **copies it** and then goes to the slip itself, lit — because that is
+  usually why you were looking. <kbd>Shift</kbd> <kbd>↵</kbd> just shows it.
+  With nothing typed, the box offers what you captured most recently, so
+  <kbd>Ctrl/Cmd</kbd> <kbd>K</kbd> <kbd>↵</kbd> hands back the last thing you put
+  down.
 - **"Which desk did I put it on?"** — <kbd>Ctrl/Cmd</kbd> <kbd>P</kbd> zooms out to
   every page, each drawn as a small desk with its slips where they really sit.
 - **"What did I write down on Tuesday?"** — **dates** opens a month at a time, with
