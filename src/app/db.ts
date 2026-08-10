@@ -28,6 +28,37 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let pending: Snapshot | null = null;
 let listenersAttached = false;
 
+/**
+ * Whether this browser is actually storing anything.
+ *
+ * IndexedDB is not always there: private browsing, blocked site data, some embedded
+ * webviews. Every call here is already wrapped so a failure cannot take the desk
+ * down — which meant the app looked perfectly healthy while saving nothing, accepted
+ * an afternoon of captures, and lost them on reload. It even announced "Saved".
+ *
+ * A product whose one claim is that nothing is lost has to say when it cannot keep
+ * that promise, so the failure is recorded here and surfaced once, permanently.
+ */
+let broken = false;
+const watchers = new Set<() => void>();
+
+function markBroken(): void {
+  if (broken) return;
+  broken = true;
+  for (const watcher of watchers) watcher();
+}
+
+export function storageIsBroken(): boolean {
+  return broken;
+}
+
+/** Called as soon as storage is known to be unusable, and immediately if it already is. */
+export function onStorageTrouble(watch: () => void): () => void {
+  watchers.add(watch);
+  if (broken) watch();
+  return () => watchers.delete(watch);
+}
+
 export function emptySnapshot(): Snapshot {
   return {
     version: SCHEMA_VERSION,
@@ -48,8 +79,10 @@ export async function loadSnapshot(): Promise<Snapshot> {
       settings: { ...DEFAULT_SETTINGS, ...stored.settings },
     };
   } catch (error) {
-    // A blocked or unavailable IndexedDB must not blank the desk on load.
+    // A blocked or unavailable IndexedDB must not blank the desk on load, but it
+    // must not pass unmentioned either.
     console.error('pastespot: could not read saved desk', error);
+    markBroken();
     return emptySnapshot();
   }
 }
@@ -106,6 +139,7 @@ export async function flush(): Promise<void> {
     bus()?.postMessage(snapshot);
   } catch (error) {
     console.error('pastespot: could not save desk', error);
+    markBroken();
   }
 }
 

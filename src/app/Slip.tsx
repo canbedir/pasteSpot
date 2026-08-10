@@ -19,6 +19,8 @@ interface SlipProps {
   viewport: { w: number; h: number };
   /** The typography settings, for the same reason: they change the paper size. */
   metrics: string;
+  /** How much of the top the desk is keeping clear right now, in px. */
+  topReserve: number;
   onChange: (id: string, body: string) => void;
   onKeywords: (id: string, keywords: string[]) => void;
   onRemove: (id: string) => void;
@@ -67,6 +69,7 @@ function Slip({
   autoFocus,
   viewport,
   metrics,
+  topReserve,
   onChange,
   onKeywords,
   onRemove,
@@ -128,11 +131,12 @@ function Slip({
       slipH: root.offsetHeight,
       deskW: desk.clientWidth,
       deskH: desk.clientHeight,
+      topReserve,
     });
     root.style.left = `${fit.x}%`;
     root.style.top = `${fit.y}%`;
     return fit;
-  }, []);
+  }, [topReserve]);
 
   // Anything that changes the paper's size changes what fits: the text, the
   // keyword line appearing, the field that edits it, and the window itself.

@@ -89,12 +89,35 @@
   white-space: nowrap;
 }
 
+/* This browser is not saving anything.
+
+   A state, not an event, so it is a permanent band rather than a toast — and the
+   only thing in the product loud enough to be called a warning. A band across the
+   top rather than a corner chip because the desk keeps that band clear for it, and
+   a chip sat on the very slip it was warning about. */
+.trouble {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  right: 0;
+  left: 0;
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  background: var(--alarm);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  color: var(--alarm-ink);
+}
+
 /* ---- chrome ------------------------------------------------------------ */
 
+/* Pushed down by the warning band when there is one, so it never sits under it. */
 .corner {
   position: absolute;
   z-index: 5;
-  top: clamp(0.75rem, 2.5vw, 1.25rem);
+  top: calc(clamp(0.75rem, 2.5vw, 1.25rem) + var(--trouble, 0px));
   right: clamp(0.75rem, 2.5vw, 1.25rem);
   display: flex;
   gap: 0.4rem;

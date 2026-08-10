@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import CommandPalette from './CommandPalette';
 import DateView from './DateView';
 import PageOverview from './PageOverview';
 import SettingsPanel from './SettingsPanel';
 import Slip from './Slip';
-import { loadSnapshot, onRemoteSave, requestPersistentStorage } from './db';
+import {
+  loadSnapshot,
+  onRemoteSave,
+  onStorageTrouble,
+  requestPersistentStorage,
+} from './db';
 import { listenForExtensionCaptures } from './extension';
 import { registerServiceWorker } from './offline';
 import { matchCountOnPage, matchesQuery, pageCapacity, slipsOnPage, useDesk } from './store';
+import { TOP_RESERVE } from './fit';
 import { tabCapacity, tabWindow } from './tabs';
 import { drawContour, grainTile, tornEdge } from './textures';
 import { clampToDesk } from './types';
@@ -93,6 +99,9 @@ export default function Board() {
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
   const [said, setSaid] = useState('');
+  const [notSaving, setNotSaving] = useState(false);
+  const troubleRef = useRef<HTMLParagraphElement>(null);
+  const [troubleHeight, setTroubleHeight] = useState(0);
 
   /**
    * Say something to a screen reader.
@@ -230,12 +239,33 @@ export default function Board() {
       const before = useDesk.getState().pages.length;
       captureText(text);
       const opened = useDesk.getState().pages.length > before;
-      say(`Saved${opened ? ' to a new page' : ''}: ${text.trim().slice(0, 60)}`);
+      // Never claim a save this browser cannot make.
+      say(
+        notSaving
+          ? `On the desk but not saved: ${text.trim().slice(0, 60)}`
+          : `Saved${opened ? ' to a new page' : ''}: ${text.trim().slice(0, 60)}`,
+      );
     };
 
     document.addEventListener('paste', onPaste);
     return () => document.removeEventListener('paste', onPaste);
-  }, [captureText, say]);
+  }, [captureText, notSaving, say]);
+
+  /**
+   * IndexedDB is not always there: private browsing, blocked site data, some
+   * embedded webviews. Every call in db.ts is wrapped so a failure cannot take the
+   * desk down, which meant the desk looked healthy while saving nothing.
+   */
+  useEffect(() => onStorageTrouble(() => setNotSaving(true)), []);
+
+  /**
+   * The warning bar owns a band at the top of the desk, so measure it rather than
+   * guessing: its height depends on how far the text wraps, which depends on the
+   * window. A warning that covers the slip it is warning about is worse than none.
+   */
+  useLayoutEffect(() => {
+    setTroubleHeight(notSaving ? (troubleRef.current?.offsetHeight ?? 0) : 0);
+  }, [notSaving, viewport]);
 
   /** Captures handed over by the browser extension arrive the same way. */
   useEffect(() => listenForExtensionCaptures(captureText), [captureText]);
@@ -321,11 +351,21 @@ export default function Board() {
       data-surface={settings.surface}
       data-prose={settings.prose}
       data-size={settings.size}
-      style={{ ['--grain' as string]: grain }}
+      style={{
+        ['--grain' as string]: grain,
+        ['--trouble' as string]: `${troubleHeight}px`,
+      }}
     >
       <canvas ref={contourRef} className={styles.contour} aria-hidden="true" />
 
       {!hasAnySlip && <GhostSlip />}
+
+      {notSaving && (
+        <p ref={troubleRef} className={styles.trouble} role="alert">
+          This browser is not saving. Nothing here survives a reload — use export in
+          settings.
+        </p>
+      )}
 
       {/*
         The chrome comes before the slips in the DOM so that it comes before them
@@ -504,6 +544,7 @@ export default function Board() {
                   viewport={viewport}
                   // Typography changes the paper`s size, so it changes what fits.
                   metrics={`${settings.prose}-${settings.size}`}
+                  topReserve={TOP_RESERVE + troubleHeight}
                   onChange={updateSlip}
                   onKeywords={setKeywords}
                   onRemove={removeSlip}

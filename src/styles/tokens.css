@@ -92,6 +92,12 @@
   --on-desk-fill: rgb(247 243 234 / 10%);
 
   --desk-grain-opacity: 0.38;
+
+  /* The one alarm in the product, for the one thing worth alarming about: this
+     browser is not saving. Deliberately outside the desk tones — it must read the
+     same on every ground, because it means the same thing on every ground. */
+  --alarm: #edb14b;
+  --alarm-ink: #1c1305;
 }
 
 /* ==========================================================================

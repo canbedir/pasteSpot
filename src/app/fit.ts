@@ -37,6 +37,12 @@ export interface FitInput {
   /** The desk's size, in px. */
   deskW: number;
   deskH: number;
+  /**
+   * How much of the top to keep clear, in px. Defaults to the corner buttons'
+   * band; the "not saving" bar adds its own height on top, because a warning that
+   * covers the slip it is warning you about is worse than none.
+   */
+  topReserve?: number;
 }
 
 /**
@@ -44,18 +50,27 @@ export interface FitInput {
  * percent. A slip larger than the desk pins to the top-left rather than being
  * pushed off it — unreadable beats unreachable.
  */
-export function fitOnDesk({ x, y, slipW, slipH, deskW, deskH }: FitInput): {
-  x: number;
-  y: number;
-} {
+export function fitOnDesk({
+  x,
+  y,
+  slipW,
+  slipH,
+  deskW,
+  deskH,
+  topReserve = TOP_RESERVE,
+}: FitInput): { x: number; y: number } {
   // Before first layout there is nothing to measure against; keep the intent.
   if (deskW <= 0 || deskH <= 0) return { x, y };
 
+  // No band may claim more than half the desk. Without this, a reserve taller than
+  // the window pushed every slip off the bottom of it.
+  const reserve = Math.min(topReserve, deskH / 2);
+
   const maxLeft = Math.max(DESK_EDGE, deskW - slipW - DESK_EDGE);
-  const maxTop = Math.max(TOP_RESERVE, deskH - slipH - TAB_RESERVE);
+  const maxTop = Math.max(reserve, deskH - slipH - TAB_RESERVE);
 
   const left = Math.min(Math.max((x / 100) * deskW, DESK_EDGE), maxLeft);
-  const top = Math.min(Math.max((y / 100) * deskH, TOP_RESERVE), maxTop);
+  const top = Math.min(Math.max((y / 100) * deskH, reserve), maxTop);
 
   return { x: (left / deskW) * 100, y: (top / deskH) * 100 };
 }

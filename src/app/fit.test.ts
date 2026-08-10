@@ -84,3 +84,17 @@ test('a desk too short for both reserves still keeps the top one', () => {
   const fit = fitOnDesk({ x: 10, y: 90, slipW: 140, slipH: 300, deskW: 900, deskH: 320 });
   assert.equal(Math.round((fit.y / 100) * 320), TOP_RESERVE);
 });
+
+test('a taller top reserve pushes slips below it', () => {
+  // The "not saving" band owns a strip of the desk, so a slip cannot sit under it.
+  const withBand = fitOnDesk({ x: 0, y: 0, ...CODE, ...DESK, topReserve: TOP_RESERVE + 34 });
+  assert.equal(Math.round((withBand.y / 100) * DESK.deskH), TOP_RESERVE + 34);
+
+  const without = fitOnDesk({ x: 0, y: 0, ...CODE, ...DESK });
+  assert.ok(withBand.y > without.y);
+});
+
+test('an absurd top reserve still leaves the slip on the desk', () => {
+  const fit = fitOnDesk({ x: 10, y: 10, ...CODE, ...DESK, topReserve: 5000 });
+  assert.ok(fit.y >= 0 && fit.y <= 100, `y was ${fit.y}`);
+});

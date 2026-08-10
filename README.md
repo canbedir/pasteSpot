@@ -138,6 +138,10 @@ There is no server, no API route, and no telemetry.
 Everything lives in your browser's IndexedDB. Nothing is transmitted anywhere,
 and after the first visit it opens with the network off.
 
+Some browsers do not allow storage at all — private windows, blocked site data. When
+that happens the desk says so in a band across the top instead of pretending, because
+it would otherwise look perfectly healthy right up until the reload.
+
 Clearing site data deletes it, so settings has **export json** and **export text**.
 The JSON round-trips back through **import**; the text file is the one that will
 still open in ten years. Importing only ever adds — a restored backup can

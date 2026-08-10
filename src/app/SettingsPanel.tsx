@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { storageHealth, type StorageHealth } from './db';
+import { storageHealth, storageIsBroken, type StorageHealth } from './db';
 import { useDesk } from './store';
 import {
   buildExport,
@@ -251,9 +251,11 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           {pages.length} page{pages.length === 1 ? '' : 's'}
           {health && `, using ${formatSize(health.usage)}`}.
           <br />
-          {health?.persisted
-            ? 'This browser has been asked to keep them, so they survive storage pressure.'
-            : 'Everything stays in this browser. Clearing site data deletes it, so export before you do.'}
+          {storageIsBroken()
+            ? 'This browser is not saving anything. Export now — nothing here survives a reload.'
+            : health?.persisted
+              ? 'This browser has been asked to keep them, so they survive storage pressure.'
+              : 'Everything stays in this browser. Clearing site data deletes it, so export before you do.'}
         </p>
       </div>
     </div>
