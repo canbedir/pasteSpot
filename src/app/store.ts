@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { loadSnapshot, queueSave, SCHEMA_VERSION } from './db';
+import { deskLayout } from './layout';
 import { findFreeSpot } from './placement';
 import {
   DEFAULT_SETTINGS,
@@ -8,10 +9,11 @@ import {
   type Page,
   type Settings,
   type Slip,
+  type Viewport,
 } from './types';
 
-/** How many slips make a desk feel full enough to open the next page. */
-export const PAGE_CAPACITY = 14;
+/** The desk before anything has measured it. */
+const UNMEASURED: Viewport = { w: 0, h: 0 };
 
 /**
  * How far back Ctrl+Z reaches. Each step holds two array references, and every
@@ -45,6 +47,12 @@ interface DeskState {
   revealedId: string | null;
   /** Undo steps, oldest first. Session state: history does not survive a reload. */
   history: HistoryStep[];
+  /**
+   * The desk's measured size. Session state, and the store's only knowledge of the
+   * screen — how many slips a page holds and where they go both depend on it, and
+   * a phone answers both differently from a laptop.
+   */
+  viewport: Viewport;
 
   load: () => Promise<void>;
   addSlip: (x: number, y: number, body?: string) => string;
@@ -60,6 +68,7 @@ interface DeskState {
   stepPage: (delta: number) => void;
   importSnapshot: (pages: Page[], slips: Slip[]) => void;
   setQuery: (query: string) => void;
+  setViewport: (viewport: Viewport) => void;
   revealSlip: (id: string | null) => void;
   undo: () => void;
   canUndo: () => boolean;
@@ -110,6 +119,7 @@ export const useDesk = create<DeskState>((set, get) => {
   query: '',
   revealedId: null,
   history: [],
+  viewport: UNMEASURED,
 
   load: async () => {
     const snapshot = await loadSnapshot();
@@ -152,10 +162,11 @@ export const useDesk = create<DeskState>((set, get) => {
     const text = body.trim();
     if (!text) return null;
 
-    if (slipsOnPage(get(), get().activePageId).length >= PAGE_CAPACITY) {
+    const layout = deskLayout(get().viewport.w, get().viewport.h);
+    if (slipsOnPage(get(), get().activePageId).length >= layout.capacity) {
       get().addPage();
     }
-    const spot = findFreeSpot(slipsOnPage(get(), get().activePageId));
+    const spot = findFreeSpot(slipsOnPage(get(), get().activePageId), layout);
     return get().addSlip(spot.x, spot.y, text);
   },
 
@@ -259,6 +270,13 @@ export const useDesk = create<DeskState>((set, get) => {
       return { activePageId: state.pages[next]!.id };
     }),
   setQuery: (query) => set({ query }),
+
+  setViewport: (viewport) =>
+    set((state) =>
+      state.viewport.w === viewport.w && state.viewport.h === viewport.h
+        ? state
+        : { viewport },
+    ),
 
   /**
    * Marks the one slip a search was looking for. Search used to jump to the page
@@ -364,8 +382,12 @@ function byPage(slips: Slip[]): Map<string, Slip[]> {
 export const slipsOnPage = (state: DeskState, pageId: string): Slip[] =>
   byPage(state.slips).get(pageId) ?? NO_SLIPS;
 
+/** How many slips this desk holds before the next page opens. */
+export const pageCapacity = (state: DeskState): number =>
+  deskLayout(state.viewport.w, state.viewport.h).capacity;
+
 export const isFull = (state: DeskState, pageId: string): boolean =>
-  slipsOnPage(state, pageId).length >= PAGE_CAPACITY;
+  slipsOnPage(state, pageId).length >= pageCapacity(state);
 
 /**
  * The most recently captured slips, newest first.

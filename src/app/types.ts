@@ -34,6 +34,12 @@ export interface Settings {
   surface: DeskSurface;
 }
 
+/** The desk's measured size in px. Never stored; it belongs to the screen. */
+export interface Viewport {
+  w: number;
+  h: number;
+}
+
 export interface Snapshot {
   version: number;
   pages: Page[];

@@ -10,7 +10,7 @@ import { beforeEach, test } from 'node:test';
 const globals = globalThis as { indexedDB?: unknown };
 globals.indexedDB ??= { open: () => ({ result: null }) };
 
-const { useDesk, slipsOnPage } = await import('./store.ts');
+const { useDesk, slipsOnPage, pageCapacity } = await import('./store.ts');
 const { DEFAULT_SETTINGS } = await import('./types.ts');
 type Slip = import('./types.ts').Slip;
 type Page = import('./types.ts').Page;
@@ -37,6 +37,7 @@ function desk(pages: Page[], slips: Slip[]) {
     query: '',
     revealedId: null,
     history: [],
+    viewport: { w: 1440, h: 900 },
   });
 }
 
@@ -179,4 +180,39 @@ test('labelling a slip is undoable and leaves updatedAt alone', () => {
 
   useDesk.getState().undo();
   assert.equal(useDesk.getState().slips.find((s) => s.id === 's1')?.keywords, undefined);
+});
+
+test('a page holds what the screen can show, not a fixed fourteen', () => {
+  desk([page('p1')], []);
+  const capacity = (w: number, h: number) => {
+    useDesk.getState().setViewport({ w, h });
+    return pageCapacity(useDesk.getState());
+  };
+
+  assert.equal(capacity(1440, 900), 14);
+  assert.equal(capacity(390, 844), 6);
+  assert.ok(capacity(768, 1024) < 14 && capacity(768, 1024) > 6);
+});
+
+test('a phone opens the next page once its six are down', () => {
+  desk([page('p1')], []);
+  useDesk.getState().setViewport({ w: 390, h: 844 });
+
+  for (let i = 0; i < 6; i++) useDesk.getState().captureText(`code ${i}`);
+  assert.equal(useDesk.getState().pages.length, 1, 'six should still fit on one page');
+
+  useDesk.getState().captureText('the seventh');
+  const after = useDesk.getState();
+  assert.equal(after.pages.length, 2);
+  assert.equal(slipsOnPage(after, after.activePageId).length, 1);
+});
+
+test('a phone stacks captures in one column instead of piling them up', () => {
+  desk([page('p1')], []);
+  useDesk.getState().setViewport({ w: 390, h: 844 });
+  for (let i = 0; i < 6; i++) useDesk.getState().captureText(`code ${i}`);
+
+  const placed = useDesk.getState().slips;
+  assert.equal(new Set(placed.map((s) => s.x)).size, 1, 'every slip should share one column');
+  assert.equal(new Set(placed.map((s) => s.y)).size, 6, 'and each should have its own row');
 });

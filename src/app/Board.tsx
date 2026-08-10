@@ -7,13 +7,7 @@ import Slip from './Slip';
 import { requestPersistentStorage } from './db';
 import { listenForExtensionCaptures } from './extension';
 import { registerServiceWorker } from './offline';
-import {
-  matchCountOnPage,
-  matchesQuery,
-  PAGE_CAPACITY,
-  slipsOnPage,
-  useDesk,
-} from './store';
+import { matchCountOnPage, matchesQuery, pageCapacity, slipsOnPage, useDesk } from './store';
 import { tabCapacity, tabWindow } from './tabs';
 import { drawContour, grainTile, tornEdge } from './textures';
 import { clampToDesk } from './types';
@@ -81,8 +75,10 @@ export default function Board() {
     renamePage,
     revealSlip,
     setActivePage,
+    setViewport,
     stepPage,
     undo,
+    viewport,
   } = state;
 
   const contourRef = useRef<HTMLCanvasElement>(null);
@@ -94,7 +90,6 @@ export default function Board() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
-  const [viewport, setViewport] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     void load();
@@ -105,8 +100,9 @@ export default function Board() {
   }, [load]);
 
   /**
-   * A resize changes what fits where, so every slip has to re-measure and the
-   * tab strip has to recount. A fresh object each time is the signal a memoised
+   * A resize changes what fits where, how many tabs the strip shows, how many
+   * slips a page holds, and where the next one goes. The store keeps the size
+   * because placement needs it too, and a fresh object is the signal a memoised
    * slip needs to know its own measurement went stale.
    */
   useEffect(() => {
@@ -123,7 +119,7 @@ export default function Board() {
       clearTimeout(timer);
       window.removeEventListener('resize', onResize);
     };
-  }, []);
+  }, [setViewport]);
 
   // Contour is a canvas, so it has to be redrawn for size and tone changes.
   useEffect(() => {
@@ -256,7 +252,7 @@ export default function Board() {
     );
 
     // A full desk opens the next page rather than stacking slips on top of each other.
-    if (slipsOnPage(state, activePageId).length >= PAGE_CAPACITY) {
+    if (slipsOnPage(state, activePageId).length >= pageCapacity(state)) {
       addPage();
     }
     setFocusId(addSlip(spot.x, spot.y));
