@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "pastespot",
+  "version": "0.1.0",
+  "description": "Paste something and close the window. It lands on your pastespot desk.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "pastespot",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "contextMenus"],
+  "content_scripts": [
+    {
+      "matches": ["https://pastespot.app/*", "http://localhost:4321/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open pastespot"
+    }
+  }
+}

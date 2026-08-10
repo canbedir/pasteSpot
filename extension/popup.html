@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pastespot</title>
+    <style>
+      /* The desk's own palette, so the popup reads as part of the product.
+         System faces on purpose: the site's webfonts live on the site's origin
+         and bundling them again would double their weight for one small box. */
+      :root {
+        --desk: #0e1411;
+        --panel: #161d19;
+        --ink: rgb(247 243 234 / 88%);
+        --muted: rgb(247 243 234 / 52%);
+        --faint: rgb(247 243 234 / 34%);
+        --line: rgb(247 243 234 / 12%);
+        --accent: #6fd1a8;
+        --accent-ink: #0e1411;
+        --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 320px;
+        margin: 0;
+        background: radial-gradient(120% 80% at 50% -10%, rgb(186 255 219 / 9%), transparent 70%),
+          var(--desk);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font-size: 13px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      header img {
+        display: block;
+        width: 92px;
+        height: 18px;
+      }
+
+      header .waiting {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+
+      textarea {
+        display: block;
+        width: 100%;
+        height: 116px;
+        padding: 12px;
+        border: 0;
+        background: none;
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.5;
+        resize: none;
+      }
+
+      textarea:focus {
+        outline: none;
+      }
+
+      textarea::placeholder {
+        color: var(--faint);
+      }
+
+      footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .hint {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        color: var(--faint);
+      }
+
+      button {
+        margin-left: auto;
+        padding: 5px 12px;
+        border: 0;
+        border-radius: 6px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+
+      button:disabled {
+        background: var(--line);
+        color: var(--faint);
+        cursor: default;
+      }
+
+      .said {
+        padding: 0 12px 10px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        color: var(--accent);
+      }
+
+      .said:empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="icons/lockup-white.svg" alt="pastespot" width="92" height="18" />
+      <span class="waiting" id="waiting"></span>
+    </header>
+
+    <textarea id="input" placeholder="Paste it here…" spellcheck="false" autofocus></textarea>
+
+    <p class="said" id="said"></p>
+
+    <footer>
+      <span class="hint" id="hint">Enter to keep · Esc to close</span>
+      <button id="keep" type="button" disabled>keep</button>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

@@ -49,6 +49,21 @@ bun test         # bun's built-in runner, no framework
 | Drag a slip's timestamp | move it |
 | Double-click the active tab | rename the page |
 
+## The extension
+
+`extension/` is a Manifest V3 extension, loadable unpacked with no build step:
+open `chrome://extensions`, turn on developer mode, **Load unpacked**, pick the
+folder.
+
+Open it with <kbd>Ctrl/Cmd</kbd> <kbd>Shift</kbd> <kbd>Y</kbd>, paste, press
+Enter. Or select text on any page and right-click **Send selection to pastespot**.
+
+There is no server to send to, so captures wait in the extension's own storage
+until a pastespot tab exists — the badge shows how many. The extension never
+writes the database itself; it hands text to the page, which stores it through
+the same path as every other capture, so the schema lives in one place and a
+failed handover keeps the queue instead of losing it.
+
 ## How it is built
 
 | | |
