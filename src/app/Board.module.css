@@ -75,25 +75,6 @@
 
 /* ---- chrome ------------------------------------------------------------ */
 
-.hint {
-  position: absolute;
-  z-index: 4;
-  top: clamp(1rem, 3vw, 1.75rem);
-  left: clamp(1rem, 3vw, 2rem);
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--on-desk-faint);
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.hintHidden {
-  opacity: 0;
-}
-
 .corner {
   position: absolute;
   z-index: 5;
@@ -234,27 +215,50 @@
   font-size: 0.5625rem;
 }
 
-.empty {
+/* The first-run hint is a ghost of the thing it is asking for, sitting exactly
+   where a slip would land. It shows the shape of the outcome instead of
+   describing it, and it never intercepts the click that replaces it. */
+.ghost {
   position: absolute;
-  z-index: 3;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  gap: 0.5rem;
-  text-align: center;
+  z-index: 2;
+  width: max-content;
+  max-width: min(26ch, 50%);
   pointer-events: none;
+  transform: rotate(-1.1deg);
+  animation: breathe 4.5s ease-in-out infinite;
 }
 
-.emptyTitle {
+.ghostPaper {
+  padding: 0.7rem 0.85rem 0.95rem;
+  border-radius: var(--radius-paper) var(--radius-paper) 0 0;
+  background: var(--paper-text);
+  color: var(--ink);
+  opacity: 0.13;
+}
+
+.ghostLine {
   font-family: var(--font-display);
-  font-size: var(--step-2);
-  color: var(--on-desk-muted);
+  font-size: 1.03125rem;
+  line-height: 1.5;
 }
 
-.emptyHint {
+.ghostFoot {
+  margin-top: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--paper-rule);
   font-family: var(--font-mono);
-  font-size: var(--step--2);
-  letter-spacing: var(--tracking-label);
+  font-size: 0.5625rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--on-desk-faint);
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }

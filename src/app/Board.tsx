@@ -12,9 +12,38 @@ import {
   slipsOnPage,
   useDesk,
 } from './store';
-import { drawContour, grainTile } from './textures';
+import { drawContour, grainTile, tornEdge } from './textures';
 import { clampToDesk } from './types';
 import styles from './Board.module.css';
+
+/**
+ * The first-run hint, drawn as a ghost of the thing it asks for: it shows the
+ * shape of the outcome rather than describing it.
+ *
+ * Placed inside the pool of light rather than at the first free spot. Matching
+ * the paste position would only be meaningful for the keyboard path — a click
+ * lands wherever the pointer is — and this is the one thing a first visitor has
+ * to notice, so being seen beats being technically consistent.
+ *
+ * Never interactive: the click that dismisses it is the same click that creates
+ * the real slip underneath.
+ */
+function GhostSlip() {
+  return (
+    <div className={styles.ghost} style={{ left: '26%', top: '24%' }} aria-hidden="true">
+      <div className={styles.ghostPaper} style={{ clipPath: tornEdge(0) }}>
+        <div className={styles.ghostLine}>Click anywhere on the desk.</div>
+        <div className={styles.ghostFoot}>or just press {modifierLabel()}V</div>
+      </div>
+    </div>
+  );
+}
+
+/** Mac keyboards say Cmd, everything else says Ctrl. */
+function modifierLabel(): string {
+  if (typeof navigator === 'undefined') return 'Ctrl+';
+  return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl+';
+}
 
 export default function Board() {
   const state = useDesk();
@@ -171,16 +200,7 @@ export default function Board() {
     >
       <canvas ref={contourRef} className={styles.contour} aria-hidden="true" />
 
-      <p className={`${styles.hint} ${hasAnySlip ? styles.hintHidden : ''}`}>
-        click an empty spot
-      </p>
-
-      {!hasAnySlip && (
-        <div className={styles.empty}>
-          <span className={styles.emptyTitle}>Nothing here yet.</span>
-          <span className={styles.emptyHint}>click anywhere, then paste</span>
-        </div>
-      )}
+      {!hasAnySlip && <GhostSlip />}
 
       <div
         className={styles.track}
