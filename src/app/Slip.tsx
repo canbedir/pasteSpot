@@ -21,6 +21,8 @@ interface SlipProps {
   onKeywords: (id: string, keywords: string[]) => void;
   onRemove: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
+  /** Speak to a screen reader, which none of this slip's feedback is visible to. */
+  onSay: (message: string) => void;
 }
 
 /**
@@ -66,6 +68,7 @@ function Slip({
   onKeywords,
   onRemove,
   onMove,
+  onSay,
 }: SlipProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
@@ -244,8 +247,10 @@ function Slip({
     try {
       await navigator.clipboard.writeText(slip.body);
       setCopied(true);
+      onSay('Copied');
     } catch {
       // Clipboard permission can be denied; say nothing rather than lie.
+      onSay('Could not copy');
     }
   };
 
@@ -291,7 +296,7 @@ function Slip({
           suppressContentEditableWarning
           spellCheck={false}
           role="textbox"
-          aria-label="Slip"
+          aria-label={`${kind} slip`}
           data-placeholder="paste or type"
           onInput={handleInput}
           onFocus={() => {
@@ -363,7 +368,10 @@ function Slip({
             <button
               type="button"
               className={`${styles.action} ${styles.remove}`}
-              onClick={() => onRemove(slip.id)}
+              onClick={() => {
+                onRemove(slip.id);
+                onSay(`Deleted. ${modifierKey()}Z puts it back`);
+              }}
             >
               delete
             </button>
@@ -384,7 +392,9 @@ function Slip({
             placeholder="lol, kredi kartı"
             aria-label="Words to find this slip by"
             onBlur={(event) => {
-              onKeywords(slip.id, parseKeywords(event.target.value));
+              const words = parseKeywords(event.target.value);
+              onKeywords(slip.id, words);
+              onSay(words.length ? `Findable as ${words.join(', ')}` : 'Keywords cleared');
               setLabelling(false);
             }}
             onKeyDown={(event) => {
@@ -440,4 +450,10 @@ function Paperclip() {
       />
     </svg>
   );
+}
+
+/** Mac keyboards say Cmd, everything else says Ctrl. */
+function modifierKey(): string {
+  if (typeof navigator === 'undefined') return 'Ctrl+';
+  return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? 'Cmd+' : 'Ctrl+';
 }

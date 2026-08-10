@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import CommandPalette from './CommandPalette';
 import DateView from './DateView';
 import PageOverview from './PageOverview';
@@ -78,6 +78,7 @@ export default function Board() {
     setViewport,
     stepPage,
     undo,
+    canUndo,
     viewport,
   } = state;
 
@@ -90,6 +91,21 @@ export default function Board() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
+  const [said, setSaid] = useState('');
+
+  /**
+   * Say something to a screen reader.
+   *
+   * Every acknowledgement in this product is visual — a lit slip, a paper that
+   * moved, a label that changed to "copied" — which means a screen reader hears
+   * nothing at all. The text is cleared afterwards so the same message can be
+   * announced twice in a row.
+   */
+  const say = useCallback((message: string) => {
+    setSaid(message);
+    window.setTimeout(() => setSaid(''), 4000);
+  }, []);
+
 
   useEffect(() => {
     void load();
@@ -164,7 +180,12 @@ export default function Board() {
       if (event.key === 'z' && !event.shiftKey) {
         if (isTyping(event.target)) return;
         event.preventDefault();
+        if (!canUndo()) {
+          say(`Nothing left to undo`);
+          return;
+        }
         undo();
+        say(`Undone`);
         return;
       }
 
@@ -181,17 +202,18 @@ export default function Board() {
         return;
       }
       // [ and ] rather than arrows: the browser owns Alt+Arrow for history.
-      if (event.key === '[') {
+      if (event.key === '[' || event.key === ']') {
         event.preventDefault();
-        stepPage(-1);
-      } else if (event.key === ']') {
-        event.preventDefault();
-        stepPage(1);
+        stepPage(event.key === ']' ? 1 : -1);
+        // Read after the move: the hook's copy is a tick behind.
+        const now = useDesk.getState();
+        const landed = now.pages.find((page) => page.id === now.activePageId);
+        if (landed) say(landed.name);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [stepPage, undo]);
+  }, [canUndo, say, stepPage, undo]);
 
   /**
    * Paste with nothing focused and the slip makes itself. This is the product's
@@ -204,12 +226,15 @@ export default function Board() {
       const text = event.clipboardData?.getData('text/plain');
       if (!text?.trim()) return;
       event.preventDefault();
+      const before = useDesk.getState().pages.length;
       captureText(text);
+      const opened = useDesk.getState().pages.length > before;
+      say(`Saved${opened ? ' to a new page' : ''}: ${text.trim().slice(0, 60)}`);
     };
 
     document.addEventListener('paste', onPaste);
     return () => document.removeEventListener('paste', onPaste);
-  }, [captureText]);
+  }, [captureText, say]);
 
   /** Captures handed over by the browser extension arrive the same way. */
   useEffect(() => listenForExtensionCaptures(captureText), [captureText]);
@@ -275,48 +300,13 @@ export default function Board() {
 
       {!hasAnySlip && <GhostSlip />}
 
-      <div
-        className={styles.track}
-        style={{ transform: `translateX(${-activeIndex * 100}%)` }}
-      >
-        {pages.map((page, pageIndex) => (
-          <div key={page.id} className={styles.page} data-page onClick={handlePageClick}>
-            {/*
-              Only the page in view and its two neighbours hold their slips. The
-              empty frames stay so the track keeps its geometry and the slide
-              still works, but the desk's DOM no longer grows with its history:
-              840 slips were mounted at once on a 60-page desk, and dragging one
-              cost 112ms a frame.
-
-              The neighbours are mounted rather than the active page alone so a
-              page slides in already painted.
-            */}
-            {Math.abs(pageIndex - activeIndex) <= 1 &&
-              slipsOnPage(state, page.id).map((slip, index) => (
-                <Slip
-                  key={slip.id}
-                  slip={slip}
-                  grain={grain}
-                  // While a search is pointing at one slip, everything else
-                  // dims — the same language the desk already uses for a
-                  // search, rather than a second one invented for this.
-                  dimmed={
-                    revealedId ? slip.id !== revealedId : !matchesQuery(slip, query)
-                  }
-                  revealed={slip.id === revealedId}
-                  settleDelay={settling ? index * 45 : null}
-                  autoFocus={slip.id === focusId}
-                  viewport={viewport}
-                  onChange={updateSlip}
-                  onKeywords={setKeywords}
-                  onRemove={removeSlip}
-                  onMove={moveSlip}
-                />
-              ))}
-          </div>
-        ))}
-      </div>
-
+      {/*
+        The chrome comes before the slips in the DOM so that it comes before them
+        in the tab order. Both are absolutely positioned with explicit z-index, so
+        moving them here changes nothing on screen — but a keyboard user reaching
+        search used to pass through every slip on the page first, which measured 57
+        stops on a full desk.
+      */}
       {/* The zoomed-out view is a whole screen of its own and carries its own
           chrome, so the desk's buttons and tab strip would only show through the
           scrim as clutter. */}
@@ -453,10 +443,57 @@ export default function Board() {
         </button>
       </div>
 
+      <div
+        className={styles.track}
+        style={{ transform: `translateX(${-activeIndex * 100}%)` }}
+      >
+        {pages.map((page, pageIndex) => (
+          <div key={page.id} className={styles.page} data-page onClick={handlePageClick}>
+            {/*
+              Only the page in view and its two neighbours hold their slips. The
+              empty frames stay so the track keeps its geometry and the slide
+              still works, but the desk's DOM no longer grows with its history:
+              840 slips were mounted at once on a 60-page desk, and dragging one
+              cost 112ms a frame.
+
+              The neighbours are mounted rather than the active page alone so a
+              page slides in already painted.
+            */}
+            {Math.abs(pageIndex - activeIndex) <= 1 &&
+              slipsOnPage(state, page.id).map((slip, index) => (
+                <Slip
+                  key={slip.id}
+                  slip={slip}
+                  grain={grain}
+                  // While a search is pointing at one slip, everything else
+                  // dims — the same language the desk already uses for a
+                  // search, rather than a second one invented for this.
+                  dimmed={
+                    revealedId ? slip.id !== revealedId : !matchesQuery(slip, query)
+                  }
+                  revealed={slip.id === revealedId}
+                  settleDelay={settling ? index * 45 : null}
+                  autoFocus={slip.id === focusId}
+                  viewport={viewport}
+                  onChange={updateSlip}
+                  onKeywords={setKeywords}
+                  onRemove={removeSlip}
+                  onMove={moveSlip}
+                  onSay={say}
+                />
+              ))}
+          </div>
+        ))}
+      </div>
+
       {overviewOpen && <PageOverview onClose={() => setOverviewOpen(false)} />}
       {datesOpen && <DateView onClose={() => setDatesOpen(false)} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+
+      <p className={styles.announcer} role="status" aria-live="polite">
+        {said}
+      </p>
     </div>
   );
 }

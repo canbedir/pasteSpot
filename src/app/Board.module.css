@@ -73,6 +73,22 @@
   height: 100%;
 }
 
+/* Spoken, never seen. Copying, deleting and undoing all happen without a word on
+   screen — the lit slip is the visual acknowledgement — so this is the only way a
+   screen reader hears that anything happened at all. Not display:none, which would
+   take it out of the accessibility tree along with the layout. */
+.announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ---- chrome ------------------------------------------------------------ */
 
 .corner {
