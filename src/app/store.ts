@@ -368,6 +368,16 @@ export const isFull = (state: DeskState, pageId: string): boolean =>
   slipsOnPage(state, pageId).length >= PAGE_CAPACITY;
 
 /**
+ * The most recently captured slips, newest first.
+ *
+ * This is what an empty search box should offer. The thing a person most often
+ * wants back is the thing they just put down, and asking them to remember and
+ * type part of it first is work the desk can do for them.
+ */
+export const recentSlips = (state: DeskState, limit: number): Slip[] =>
+  [...state.slips].sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+
+/**
  * A search does not produce a list. Matching slips stay exactly where they are
  * and the rest dim, so spatial memory survives the search.
  *
