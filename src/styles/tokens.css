@@ -48,17 +48,28 @@
 
   --ink: #221f19;
   --ink-code: #1b2226;
-  --ink-muted: #97907f;
-  --ink-path: #6f7a6c;
-  --ink-placeholder: #a9a292;
+  /* The foot: a timestamp, which is information, and the drag handle, which is a
+     control. At #97907f it measured 2.31:1 on fresh paper and 1.83:1 on aged —
+     both far under the 4.5 small text needs. Still clearly quieter than --ink. */
+  --ink-muted: #56513f;
+  /* A link's path. 2.59:1 on aged paper before this. */
+  --ink-path: #485141;
+  /* "paste or type" on an empty slip — the only instruction a brand new slip
+     carries, so it is text that has to be readable. #8d8676 measured 2.62:1 on
+     aged code paper, the darkest ground it can land on. */
+  --ink-placeholder: #645d4c;
   --paper-rule: rgb(34 31 25 / 9%);
   --paper-grain-opacity: 0.2;
 
   /* Age. Paper yellows, which is how the desk shows time without spending any
      space on it. Applied at `--patina` strength, from 0 today to 1 at a year.
-     Warm and weak on purpose: this must never cost legibility. */
-  --paper-patina: rgb(196 148 62 / 26%);
-  --paper-patina-edge: rgb(150 106 40 / 30%);
+
+     Warm and weak on purpose: this must never cost legibility. The first pass was
+     26%/30%, which dropped a year-old sheet's luminance by 22% and took the foot
+     down to 1.83:1. Measured against every tone at both extremes; see
+     scratchpad check-contrast. */
+  --paper-patina: rgb(196 148 62 / 19%);
+  --paper-patina-edge: rgb(150 106 40 / 22%);
 
   --slip-shadow:
     drop-shadow(0 1px 1px rgb(0 0 0 / 30%))
