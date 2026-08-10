@@ -27,6 +27,10 @@ Paper yellows, too. Something from this morning is bright white and something fr
 last spring is tea-stained, so you can see how old a corner of the desk is without
 reading a single timestamp.
 
+On a phone the desk lays slips out in a single column down the page, and opens its
+next page sooner, because a grid built for a 1440px window buries them on a 390px
+one.
+
 ## Status
 
 Working, and not yet deployed anywhere.
