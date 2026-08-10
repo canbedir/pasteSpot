@@ -1,6 +1,11 @@
 /**
  * Adds the "send selection to pastespot" path, and keeps the badge honest about
  * how many captures are still waiting for a desk to open.
+ *
+ * There is no offscreen document here, and there cannot be one — see
+ * docs/EXTENSION.md. Chrome partitions a framed site's storage by the top-level
+ * site, so a desk loaded inside an extension document would write to a store the
+ * real desk never opens. The badge and the queue are the honest answer instead.
  */
 
 import { enqueue, QUEUE_KEY, readQueue } from './queue.js';
