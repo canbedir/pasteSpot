@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DESK_EDGE, fitOnDesk, TAB_RESERVE } from './fit.ts';
+import { DESK_EDGE, fitOnDesk, TAB_RESERVE, TOP_RESERVE } from './fit.ts';
 
 /**
  * The old bounds were a fixed box — 64% across, 72% down — sized for the widest
@@ -47,7 +47,7 @@ test('the bottom keeps the tab strip clear', () => {
 test('a slip larger than the desk pins to the corner rather than hanging off it', () => {
   const fit = fitOnDesk({ x: 80, y: 80, slipW: 600, slipH: 1200, deskW: 390, deskH: 844 });
   assert.equal(Math.round((fit.x / 100) * 390), DESK_EDGE);
-  assert.equal(Math.round((fit.y / 100) * 844), DESK_EDGE);
+  assert.equal(Math.round((fit.y / 100) * 844), TOP_RESERVE);
 });
 
 test('a slip that fitted on a wide desk stays on screen on a phone', () => {
@@ -63,7 +63,7 @@ test('a slip that fitted on a wide desk stays on screen on a phone', () => {
 test('negative and absurd input is clamped, not trusted', () => {
   const fit = fitOnDesk({ x: -50, y: -999, ...CODE, ...DESK });
   assert.equal(Math.round((fit.x / 100) * DESK.deskW), DESK_EDGE);
-  assert.equal(Math.round((fit.y / 100) * DESK.deskH), DESK_EDGE);
+  assert.equal(Math.round((fit.y / 100) * DESK.deskH), TOP_RESERVE);
 });
 
 test('an unmeasured desk hands the intent straight back', () => {
@@ -71,4 +71,16 @@ test('an unmeasured desk hands the intent straight back', () => {
     x: 42,
     y: 17,
   });
+});
+
+test('the top band stays clear of the corner buttons', () => {
+  // Freeing the right-hand side made the top right reachable for the first time,
+  // which is exactly where search / pages / settings sit.
+  const fit = fitOnDesk({ x: 95, y: 0, ...CODE, ...DESK });
+  assert.equal(Math.round((fit.y / 100) * DESK.deskH), TOP_RESERVE);
+});
+
+test('a desk too short for both reserves still keeps the top one', () => {
+  const fit = fitOnDesk({ x: 10, y: 90, slipW: 140, slipH: 300, deskW: 900, deskH: 320 });
+  assert.equal(Math.round((fit.y / 100) * 320), TOP_RESERVE);
 });

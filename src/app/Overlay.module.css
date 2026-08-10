@@ -63,15 +63,29 @@
 }
 
 .result:hover,
-.result:focus-visible {
+.result:focus-visible,
+.result[aria-selected='true'] {
   background: var(--on-desk-fill);
   color: var(--on-desk);
 }
 
 .resultBody {
+  display: flex;
   overflow: hidden;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* Why this row matched, when it did not match on its text. */
+.resultKeywords {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  color: var(--accent);
 }
 
 .resultPage {

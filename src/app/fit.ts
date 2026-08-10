@@ -17,6 +17,16 @@ export const DESK_EDGE = 10;
 /** Kept clear at the bottom for the tab strip, in px. */
 export const TAB_RESERVE = 40;
 
+/**
+ * Kept clear at the top for the corner buttons, in px.
+ *
+ * This only started to matter once the right-hand side of the desk became
+ * reachable: a slip placed at the top right used to be impossible, and now lands
+ * under `search / pages / settings`. Allows for the paperclip, which overhangs
+ * the paper by 11px.
+ */
+export const TOP_RESERVE = 64;
+
 export interface FitInput {
   /** Requested top-left, in percent of the desk. */
   x: number;
@@ -42,10 +52,10 @@ export function fitOnDesk({ x, y, slipW, slipH, deskW, deskH }: FitInput): {
   if (deskW <= 0 || deskH <= 0) return { x, y };
 
   const maxLeft = Math.max(DESK_EDGE, deskW - slipW - DESK_EDGE);
-  const maxTop = Math.max(DESK_EDGE, deskH - slipH - TAB_RESERVE);
+  const maxTop = Math.max(TOP_RESERVE, deskH - slipH - TAB_RESERVE);
 
   const left = Math.min(Math.max((x / 100) * deskW, DESK_EDGE), maxLeft);
-  const top = Math.min(Math.max((y / 100) * deskH, DESK_EDGE), maxTop);
+  const top = Math.min(Math.max((y / 100) * deskH, TOP_RESERVE), maxTop);
 
   return { x: (left / deskW) * 100, y: (top / deskH) * 100 };
 }

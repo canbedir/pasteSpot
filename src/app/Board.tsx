@@ -55,15 +55,18 @@ export default function Board() {
     settings,
     activePageId,
     query,
+    revealedId,
     load,
     addSlip,
     addPage,
     captureText,
     updateSlip,
+    setKeywords,
     moveSlip,
     removeSlip,
     removePage,
     renamePage,
+    revealSlip,
     setActivePage,
     stepPage,
   } = state;
@@ -188,6 +191,16 @@ export default function Board() {
   /** Captures handed over by the browser extension arrive the same way. */
   useEffect(() => listenForExtensionCaptures(captureText), [captureText]);
 
+  /**
+   * A revealed slip is lit long enough to be seen and then let go, so the desk
+   * does not keep a stale highlight from a search made minutes ago.
+   */
+  useEffect(() => {
+    if (!revealedId) return;
+    const timer = setTimeout(() => revealSlip(null), 2400);
+    return () => clearTimeout(timer);
+  }, [revealedId, revealSlip]);
+
   const activeIndex = Math.max(
     0,
     pages.findIndex((page) => page.id === activePageId),
@@ -262,11 +275,18 @@ export default function Board() {
                   slip={slip}
                   index={index}
                   grain={grain}
-                  dimmed={!matchesQuery(slip, query)}
+                  // While a search is pointing at one slip, everything else
+                  // dims — the same language the desk already uses for a
+                  // search, rather than a second one invented for this.
+                  dimmed={
+                    revealedId ? slip.id !== revealedId : !matchesQuery(slip, query)
+                  }
+                  revealed={slip.id === revealedId}
                   settleDelay={settling ? index * 45 : null}
                   autoFocus={slip.id === focusId}
                   viewport={viewport}
                   onChange={updateSlip}
+                  onKeywords={setKeywords}
                   onRemove={removeSlip}
                   onMove={moveSlip}
                 />

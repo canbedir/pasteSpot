@@ -34,6 +34,45 @@
   opacity: 0.5;
 }
 
+/* The slip a search was looking for. It lifts off the desk and is lit for a
+   moment: the search's job is to point at one thing, and the eye needs telling
+   which one on a page of fourteen. */
+.revealed {
+  z-index: 5;
+  animation: found 2.4s var(--ease-settle);
+}
+
+@keyframes found {
+  0%,
+  72% {
+    transform: rotate(0deg) translateY(-7px) scale(1.035);
+  }
+
+  100% {
+    transform: rotate(var(--rest-angle, 0deg));
+  }
+}
+
+/* The light is a tinted shadow rather than an outline, because clip-path cuts an
+   outline off at the torn edge just as it does a box-shadow. */
+.revealed .paper {
+  animation: lit 2.4s var(--ease-settle);
+}
+
+@keyframes lit {
+  0%,
+  72% {
+    filter:
+      drop-shadow(0 0 1px var(--accent))
+      drop-shadow(0 0 13px color-mix(in srgb, var(--accent) 55%, transparent))
+      drop-shadow(0 22px 30px rgb(0 0 0 / 52%));
+  }
+
+  100% {
+    filter: var(--slip-shadow);
+  }
+}
+
 /* The paper itself. clip-path cuts the shape, so the lift has to come from
    drop-shadow: box-shadow ignores the clip and draws a rectangle underneath. */
 .paper {
@@ -148,8 +187,15 @@
   cursor: grabbing;
 }
 
-.action {
+/* The actions group so the stamp keeps the left and adding one more never
+   rearranges the others. */
+.actions {
+  display: flex;
+  gap: 0.55rem;
   margin-left: auto;
+}
+
+.action {
   padding: 0;
   border: 0;
   background: none;
@@ -163,7 +209,6 @@
 }
 
 .remove {
-  margin-left: 0;
   color: var(--ink-muted);
 }
 
@@ -179,6 +224,49 @@
 /* Keyboard users never hover, so actions must not be hover-only. */
 .action:focus-visible {
   opacity: 1;
+}
+
+/* ---- keywords ---------------------------------------------------------- */
+
+/* Written in the margin after the fact, so it reads as annotation rather than
+   as a field someone forgot to fill in. A slip with no keywords shows nothing. */
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+  margin-top: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.keyword {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--paper-rule);
+  border-radius: 999px;
+}
+
+.keywordField {
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid var(--paper-rule);
+  border-radius: var(--radius-ui);
+  background: rgb(34 31 25 / 4%);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+}
+
+.keywordField:focus {
+  outline: none;
+  border-color: var(--accent-strong);
+}
+
+.keywordField::placeholder {
+  color: var(--ink-placeholder);
 }
 
 /* ---- paperclip --------------------------------------------------------- */

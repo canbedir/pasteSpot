@@ -9,6 +9,11 @@ export interface Slip {
   pageId: string;
   /** Exactly what was typed or pasted. Never normalised. */
   body: string;
+  /**
+   * Words this slip should also be findable by, added after it was made. Absent
+   * on almost every slip, which is why it is optional rather than an empty array.
+   */
+  keywords?: string[];
   /** 0-100, percentage of desk width. Percentages survive a resize; pixels do not. */
   x: number;
   /** 0-100, percentage of desk height. */

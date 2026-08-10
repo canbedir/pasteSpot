@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION } from './db';
+import { sanitizeKeywords } from './keywords';
 import { clampToDesk, type Page, type Settings, type Slip } from './types';
 
 /**
@@ -46,7 +47,12 @@ export function toPlainText(pages: Page[], slips: Slip[]): string {
       continue;
     }
     for (const slip of onPage) {
-      lines.push(slip.body, `  — ${stamp(slip.createdAt)}`, '');
+      lines.push(slip.body);
+      // Keywords go on the stamp line: they are the only reason some slips can
+      // be found at all, so a text backup that dropped them would lose the way
+      // back in even though the text survived.
+      const keywords = slip.keywords?.length ? ` · ${slip.keywords.join(', ')}` : '';
+      lines.push(`  — ${stamp(slip.createdAt)}${keywords}`, '');
     }
   }
 
@@ -119,10 +125,13 @@ export function parseImport(raw: string): { pages: Page[]; slips: Slip[] } {
       typeof raw.y === 'number' && Number.isFinite(raw.y) ? raw.y : 8,
     );
 
+    const keywords = sanitizeKeywords(raw.keywords);
+
     slips.push({
       id: newId(),
       pageId,
       body: raw.body,
+      ...(keywords ? { keywords } : {}),
       x: spot.x,
       y: spot.y,
       createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : now,

@@ -109,3 +109,38 @@ test('an empty page is marked rather than silently skipped', () => {
   const text = toPlainText(pages, [slips[0]!]);
   assert.match(text, /# work\n\n\(empty\)/);
 });
+
+test('keywords survive a JSON round-trip', () => {
+  const withKeywords = JSON.stringify({
+    format: 'pastespot',
+    version: 1,
+    pages,
+    slips: [{ body: 'a123fff4', pageId: 'p1', x: 5, y: 5, keywords: ['lol', 'şifre'] }],
+  });
+  assert.deepEqual(parseImport(withKeywords).slips[0]?.keywords, ['lol', 'şifre']);
+});
+
+test('junk keywords are cleaned rather than trusted or fatal', () => {
+  const junk = JSON.stringify({
+    format: 'pastespot',
+    version: 1,
+    pages,
+    slips: [
+      { body: 'one', pageId: 'p1', x: 5, y: 5, keywords: 'lol' },
+      { body: 'two', pageId: 'p1', x: 5, y: 5, keywords: ['LOL', 'lol', 42] },
+      { body: 'three', pageId: 'p1', x: 5, y: 5, keywords: [] },
+    ],
+  });
+  const back = parseImport(junk).slips;
+  assert.equal(back[0]?.keywords, undefined);
+  assert.deepEqual(back[1]?.keywords, ['lol']);
+  assert.equal(back[2]?.keywords, undefined);
+});
+
+test('the text export keeps keywords, the only way some slips can be found', () => {
+  const text = toPlainText(pages, [
+    { id: 's1', pageId: 'p1', body: 'a123fff4', keywords: ['lol'], x: 5, y: 5, createdAt: 0, updatedAt: 0 },
+  ]);
+  assert.match(text, /a123fff4/);
+  assert.match(text, /lol/);
+});

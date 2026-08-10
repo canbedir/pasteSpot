@@ -20,11 +20,14 @@ interface DeskState {
   settings: Settings;
   activePageId: string;
   query: string;
+  /** The slip a search just sent us to. Session state; never persisted. */
+  revealedId: string | null;
 
   load: () => Promise<void>;
   addSlip: (x: number, y: number, body?: string) => string;
   captureText: (body: string) => string | null;
   updateSlip: (id: string, body: string) => void;
+  setKeywords: (id: string, keywords: string[]) => void;
   moveSlip: (id: string, x: number, y: number) => void;
   removeSlip: (id: string) => void;
   addPage: (name?: string) => string;
@@ -34,6 +37,7 @@ interface DeskState {
   stepPage: (delta: number) => void;
   importSnapshot: (pages: Page[], slips: Slip[]) => void;
   setQuery: (query: string) => void;
+  revealSlip: (id: string | null) => void;
   updateSettings: (patch: Partial<Settings>) => void;
 }
 
@@ -58,6 +62,7 @@ export const useDesk = create<DeskState>((set, get) => ({
   settings: { ...DEFAULT_SETTINGS },
   activePageId: '',
   query: '',
+  revealedId: null,
 
   load: async () => {
     const snapshot = await loadSnapshot();
@@ -108,6 +113,19 @@ export const useDesk = create<DeskState>((set, get) => ({
     set((state) => ({
       slips: state.slips.map((slip) =>
         slip.id === id ? { ...slip, body, updatedAt: Date.now() } : slip,
+      ),
+    })),
+
+  /**
+   * Keywords are metadata, not content, so this deliberately leaves updatedAt
+   * alone: labelling a slip months later must not make it look freshly written.
+   */
+  setKeywords: (id, keywords) =>
+    set((state) => ({
+      slips: state.slips.map((slip) =>
+        slip.id === id
+          ? { ...slip, keywords: keywords.length ? keywords : undefined }
+          : slip,
       ),
     })),
 
@@ -166,6 +184,13 @@ export const useDesk = create<DeskState>((set, get) => ({
       return { activePageId: state.pages[next]!.id };
     }),
   setQuery: (query) => set({ query }),
+
+  /**
+   * Marks the one slip a search was looking for. Search used to jump to the page
+   * and stop there, which left the person to find the slip among fourteen others
+   * by eye — the work the search was supposed to do.
+   */
+  revealSlip: (id) => set({ revealedId: id }),
 
   updateSettings: (patch) =>
     set((state) => ({ settings: { ...state.settings, ...patch } })),
@@ -234,11 +259,15 @@ export const isFull = (state: DeskState, pageId: string): boolean =>
 /**
  * A search does not produce a list. Matching slips stay exactly where they are
  * and the rest dim, so spatial memory survives the search.
+ *
+ * Keywords are searched alongside the body: a slip whose text is `a123fff4` can
+ * only be found by something a person would actually think to type.
  */
 export const matchesQuery = (slip: Slip, query: string): boolean => {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
-  return slip.body.toLowerCase().includes(needle);
+  if (slip.body.toLowerCase().includes(needle)) return true;
+  return slip.keywords?.some((keyword) => keyword.includes(needle)) ?? false;
 };
 
 export const matchCountOnPage = (state: DeskState, pageId: string): number => {

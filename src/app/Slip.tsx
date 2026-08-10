@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { detectKind, formatStamp, splitLink } from './detect';
 import { fitOnDesk } from './fit';
+import { formatKeywords, parseKeywords } from './keywords';
 import { restAngle, tornEdge } from './textures';
 import { type Slip as SlipModel, type SlipKind } from './types';
 import styles from './Slip.module.css';
@@ -10,11 +11,14 @@ interface SlipProps {
   index: number;
   grain: string;
   dimmed: boolean;
+  /** A search sent us here: lift it and ring it until the person has seen it. */
+  revealed: boolean;
   settleDelay: number | null;
   autoFocus: boolean;
   /** Replaced when the window resizes, so a slip re-measures where it fits. */
   viewport: { w: number; h: number };
   onChange: (id: string, body: string) => void;
+  onKeywords: (id: string, keywords: string[]) => void;
   onRemove: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
 }
@@ -50,10 +54,12 @@ function Slip({
   index,
   grain,
   dimmed,
+  revealed,
   settleDelay,
   autoFocus,
   viewport,
   onChange,
+  onKeywords,
   onRemove,
   onMove,
 }: SlipProps) {
@@ -61,7 +67,9 @@ function Slip({
   const bodyRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [labelling, setLabelling] = useState(false);
   const kind = detectKind(slip.body);
+  const keywords = slip.keywords ?? [];
 
   useLayoutEffect(() => {
     const element = bodyRef.current;
@@ -98,9 +106,11 @@ function Slip({
     return fit;
   }, []);
 
+  // Anything that changes the paper's size changes what fits: the text, the
+  // keyword line appearing, the field that edits it, and the window itself.
   useLayoutEffect(() => {
     place(slip.x, slip.y);
-  }, [place, slip.x, slip.y, slip.body, viewport]);
+  }, [place, slip.x, slip.y, slip.body, slip.keywords, labelling, viewport]);
 
   useEffect(() => {
     if (!autoFocus) return;
@@ -196,6 +206,7 @@ function Slip({
   const className = [
     styles.slip,
     dimmed ? styles.dimmed : '',
+    revealed ? styles.revealed : '',
     dragging ? styles.dragging : '',
     // A settling slip must not also be mid-drag, or the two transforms fight.
     settleDelay !== null && !dragging ? styles.settling : '',
@@ -242,17 +253,64 @@ function Slip({
           >
             {formatStamp(slip.updatedAt)}
           </span>
-          <button type="button" className={styles.action} onClick={handleCopy}>
-            {copied ? 'copied' : 'copy'}
-          </button>
-          <button
-            type="button"
-            className={`${styles.action} ${styles.remove}`}
-            onClick={() => onRemove(slip.id)}
-          >
-            delete
-          </button>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.action}
+              onClick={() => setLabelling(true)}
+              title="Words to find this by"
+            >
+              {keywords.length ? 'edit' : 'keyword'}
+            </button>
+            <button type="button" className={styles.action} onClick={handleCopy}>
+              {copied ? 'copied' : 'copy'}
+            </button>
+            <button
+              type="button"
+              className={`${styles.action} ${styles.remove}`}
+              onClick={() => onRemove(slip.id)}
+            >
+              delete
+            </button>
+          </div>
         </div>
+
+        {/*
+          Written in the margin, after the fact. A slip with no keywords shows
+          nothing at all here — the capture path must stay two actions, so this
+          can never be something to fill in on the way past.
+        */}
+        {labelling ? (
+          <input
+            className={styles.keywordField}
+            defaultValue={formatKeywords(slip.keywords)}
+            autoFocus
+            spellCheck={false}
+            placeholder="lol, kredi kartı"
+            aria-label="Words to find this slip by"
+            onBlur={(event) => {
+              onKeywords(slip.id, parseKeywords(event.target.value));
+              setLabelling(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.currentTarget.blur();
+              if (event.key === 'Escape') {
+                event.stopPropagation();
+                setLabelling(false);
+              }
+            }}
+          />
+        ) : (
+          keywords.length > 0 && (
+            <div className={styles.keywords}>
+              {keywords.map((keyword) => (
+                <span key={keyword} className={styles.keyword}>
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          )
+        )}
       </div>
 
       {index % 3 === 0 && <Paperclip />}
